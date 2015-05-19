@@ -16,11 +16,11 @@
 
 import sys,os,time
 import numpy as np
-from pyfret import pyFRET as pft
 from PyQt4 import QtGui, QtCore
 from table_widget import TableWidget
 from image_widget import ImageWidget
 from file_source_widget import FileSourceWidget
+from settings_widget import SettingsWidget
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
@@ -77,15 +77,16 @@ class MainWindow(QtGui.QMainWindow):
         controlLayout=QtGui.QVBoxLayout(controlWidget)
         controlLayout.setAlignment(QtCore.Qt.AlignTop)
         
-        #self.runButton=QtGui.QPushButton('Run calc')
-        #controlLayout.addWidget(self.runButton)     
-        
+        self.settingsWidget=SettingsWidget(self)
+        controlLayout.addWidget(self.settingsWidget)     
+        self.settings=self.settingsWidget.collectSettings()
+
         #self.pbar = QtGui.QProgressBar(self) 
         #controlLayout.addWidget(self.pbar)    
         
         mainWidget.addWidget(controlWidget)
         self.setCentralWidget(mainWidget)
-        self.setWindowTitle('-PASTENAME-GUI')   
+        self.setWindowTitle('FRETTY')   
         
         self.assignConnections()
         
@@ -94,43 +95,54 @@ class MainWindow(QtGui.QMainWindow):
         '''
         Assigning connections
         '''
-        self.connect(self.fileMenu,QtCore.SIGNAL("updateFilePreview"),self.preview_file)
+        self.connect(self.fileMenu,QtCore.SIGNAL("updateFilePreview"),self.set_data)
+        self.connect(self.settingsWidget,QtCore.SIGNAL("settingsUpdatedSignal"),self.apply_settings)
         
-        #self.connect(self.preview,QtCore.SIGNAL("imageWigetPressed"),self.previewClicked)
-        #self.connect(self.preview,QtCore.SIGNAL("imageWigetHovered"),self.previewHovered)
-        
-        #self.connect(self.result,QtCore.SIGNAL("imageWigetPressed"),self.resultClicked)
-        #self.connect(self.result,QtCore.SIGNAL("imageWigetHovered"),self.resultHovered)
-        
-        #self.runButton.clicked.connect(self.run_calculations)
+    def apply_settings(self,settings):
+        self.settings=settings
+        self.show_graph(self.data,self.settings)
     
-    def previewClicked(self, coord, path):
-        print "preview Clicked",coord, path
-    
-    def previewHovered(self, coord, path):
-        print "preview Hovered",coord, path
-         
-    def resultClicked(self, coord, path):
-        print "result Clicked",coord, path
-         
-    def resultHovered(self, coord, path):
-        print "result Hovered",coord, path 
+    def set_data(self,data):
+        self.data=data
+        self.show_graph(self.data,self.settings)
         
-    def preview_file(self,data):
-        lol = pft.FRET_data(data[:,2],data[:,1])
-        lol.subtract_bckd(2.0,1.0)
-        threshold_donor = 7 # donor threshold
-        threshold_acceptor = 5 # acceptor threshold
-        lol.threshold_SUM(threshold_donor)
-        cross_DtoA = 0.20 # fractional crosstalk from donor to acceptor
-        cross_AtoD = 0.01 # fractional crosstalk from acceptor to donor
-        lol.subtract_crosstalk(cross_DtoA, cross_AtoD)
+    
+    def show_graph(self,data,settings):
+        cy3=data[:,2]
+        cy5=data[:,1]        
+        FG=cy3 - np.average(cy3) 
+        FR=cy5 - np.average(cy5) - settings['DE']
+        select = (FG > settings['TD']*np.std(cy3)) | (FR > settings['TD']*np.std(cy5))
+        #select = (FG > settings['TD']) & (FR > settings['TA'])
+        FG=FG[select]
+        FR=FR[select]
+        donor_cross= settings['aAD']*FG
+        acceptor_cross=settings['aDA']*FR
+        FG=FG-donor_cross
+        FR=FR-acceptor_cross
+        gamma=(float(settings['QA'])*settings['gR'])/(float(settings['QD'])*settings['gG'])
+        E=FR/(FR+gamma*FG)
+        result=np.histogram(E,np.arange(-0.2,1.25,0.05),normed=True)
+        
+#        fret = pft.FRET_data(data[:,2],data[:,1])
+#        
+#        threshold_donor = 7 # donor threshold
+#        threshold_acceptor = 5 # acceptor threshold
+#        
+#        cross_DtoA = 0.20 # fractional crosstalk from donor to acceptor
+#        cross_AtoD = 0.01 # fractional crosstalk from acceptor to donor
+#        
+#        fret.threshold_SUM(threshold_donor)
+#        fret.subtract_bckd(settings['BG'],settings['BR'])
+#        fret.subtract_crosstalk(settings['aDA'], settings['aAD'])
+#        
         
         ax = self.figure.add_subplot(111)
         ax.hold(False)
-        result=np.histogram(lol.proximity_ratio(gamma=0.95),np.arange(0,1.05,0.05),normed=True)
+#        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
         ax.plot(result[1][:-1]+(result[1][1]-result[1][0])/2.0,result[0])
         self.canvas.draw()
+        
 
     
     def run_calculations(self):
