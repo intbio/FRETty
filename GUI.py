@@ -108,8 +108,11 @@ class MainWindow(QtGui.QMainWindow):
         
     
     def show_graph(self,data,settings):
+        time=data[:,0]
         cy3=data[:,2]
         cy5=data[:,1]        
+        cy5_norm=np.round(np.average(time[1:]-time[:-1])*cy5*1000)
+        np.histogram(cy5_norm,np.arange(0,40,1),normed=True)[0]
         FG=cy3 - np.average(cy3) 
         FR=cy5 - np.average(cy5) - settings['DE']
         select = (FG > settings['TD']*np.std(cy3)) | (FR > settings['TD']*np.std(cy5))
