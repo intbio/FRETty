@@ -59,18 +59,10 @@ class SettingsWidget(QtGui.QWidget):
         self.TD=QtGui.QDoubleSpinBox(self)
         self.TD.setRange(0,1000)
         self.TD.setSingleStep(0.1)
-        self.TD.setValue(0)
+        self.TD.setValue(3)
         self.TD.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.TD)
         
-        text=QtGui.QLabel('Thresh Accept:')
-        mainLayout.addWidget(text)
-        self.TA=QtGui.QDoubleSpinBox(self)
-        self.TA.setRange(0,1000)
-        self.TA.setSingleStep(0.1)
-        self.TA.setValue(0)
-        self.TA.valueChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.TA)
         
         text=QtGui.QLabel('DE:')
         mainLayout.addWidget(text)
@@ -106,7 +98,6 @@ class SettingsWidget(QtGui.QWidget):
         'gR':self.gR.value(),
         'gG':self.gG.value(),
         'TD':self.TD.value(),
-        'TA':self.TA.value(),
         'DE':self.DE.value(),
         'aAD':self.aAD.value(),
         'aDA':self.aDA.value()}

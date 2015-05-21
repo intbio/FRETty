@@ -21,10 +21,12 @@ from table_widget import TableWidget
 from image_widget import ImageWidget
 from file_source_widget import FileSourceWidget
 from settings_widget import SettingsWidget
+from scipy.optimize import leastsq
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 
 
 try:
@@ -70,7 +72,13 @@ class MainWindow(QtGui.QMainWindow):
        
         fastFRET=QtGui.QWidget(self)
         fastFRETLayout=QtGui.QVBoxLayout(fastFRET)
-        tabs.addTab(fastFRET,"Fast spFRET")
+        tabs.addTab(fastFRET,"Raw data")
+        self.figure1 = plt.figure()
+        self.canvas1 = FigureCanvas(self.figure1)
+        self.toolbar1 = NavigationToolbar(self.canvas1, self)
+        fastFRETLayout.addWidget(self.canvas1)
+        fastFRETLayout.addWidget(self.toolbar1)
+        
         mainWidget.addWidget(tabs)
         
         controlWidget=QtGui.QWidget(self)
@@ -106,16 +114,88 @@ class MainWindow(QtGui.QMainWindow):
         self.data=data
         self.show_graph(self.data,self.settings)
         
-    
-    def show_graph(self,data,settings):
+    def plot_raw(self,data,settings):
         time=data[:,0]
         cy3=data[:,2]
-        cy5=data[:,1]        
-        cy5_norm=np.round(np.average(time[1:]-time[:-1])*cy5*1000)
-        np.histogram(cy5_norm,np.arange(0,40,1),normed=True)[0]
-        FG=cy3 - np.average(cy3) 
-        FR=cy5 - np.average(cy5) - settings['DE']
-        select = (FG > settings['TD']*np.std(cy3)) | (FR > settings['TD']*np.std(cy5))
+        cy5=data[:,1]
+        timestep=np.average(time[1:]-time[:-1])
+        cy3_int=np.round(timestep*cy3*1000)
+        cy5_int=np.round(timestep*cy5*1000)
+        max=[cy3_int.max() if cy5_int.max()<=cy3_int.max() else cy5_int.max()][0]
+        av_max=[np.average(cy3_int) if np.average(cy5_int)<=np.average(cy3_int) else np.average(cy5_int)][0]
+        max=np.round(max/3)
+        x=np.arange(0,max,1)
+        cy3_hist=np.histogram(cy3_int,x,normed=True)[0]
+        cy5_hist=np.histogram(cy5_int,x,normed=True)[0]
+        x_axis=x[:-1]
+        m, sd1, = [5, 1]
+        p = [m, sd1] # Initial guesses for leastsq
+        plsq_cy3 = leastsq(res, p, args = (cy3_hist, x_axis))
+        plsq_cy5 = leastsq(res, p, args = (cy5_hist, x_axis))
+
+        cy3_est = norm(x_axis, plsq_cy3[0][0], plsq_cy3[0][1])
+        cy5_est = norm(x_axis, plsq_cy5[0][0], plsq_cy5[0][1])
+
+        x_axis=x_axis/(timestep*1000)
+        cy3_guess=plsq_cy3[0]/(timestep*1000)
+        cy5_guess=plsq_cy5[0]/(timestep*1000)
+        
+        self.figure1.clf()
+        gs = gridspec.GridSpec(2, 2)
+        ax00 = self.figure1.add_subplot(gs[0,0])
+        ax00.plot(x_axis, cy3_hist,color='blue', label='Raw')
+        ax00.plot(x_axis, cy3_est,color='black', label='Fitted')
+        ax00.axvline(cy3_guess[0],color='red', label='Bkgnd')
+        ax00.axvline(cy3_guess[0]+3*cy3_guess[1],color='green', label='Thld')
+        ax00.legend()   
+        ax00.set_title('Cy3 hist')
+        ax00.set_ylabel('Amount')
+        ax00.set_xlabel('Count, kHz')
+        ax00.set_xlim(0,np.round(cy3_guess[0]+10*cy3_guess[1]))
+
+        
+        ax01 = self.figure1.add_subplot(gs[0,1])
+        ax01.plot(x_axis, cy5_hist,color='blue', label='Raw')
+        ax01.plot(x_axis, cy5_est,color='black', label='Fitted')
+        ax01.axvline(cy5_guess[0],color='red', label='Bkgnd')
+        ax01.axvline(cy5_guess[0]+3*cy3_guess[1],color='green', label='Thld')
+        ax01.legend() 
+        ax01.set_title('Cy5 hist')
+        ax01.set_ylabel('Amount')
+        ax01.set_xlabel('Count, kHz')
+        ax01.set_xlim(0,np.round(cy5_guess[0]+10*cy5_guess[1]))
+                
+        ax10 = self.figure1.add_subplot(gs[1,0])
+        ax10.plot(time[::10],cy3[::10],color='blue',linestyle='None',marker='.',label='Raw')
+        ax10.axhline(cy3_guess[0],color='red', label='Bkgnd')
+        ax10.axhline(cy3_guess[0]+3*cy3_guess[1],color='green', label='Thld')
+        ax10.legend()   
+        ax10.set_title('Cy3 raw data (every 10th)')
+        ax10.set_ylabel('Count, kHz')
+        ax10.set_xlabel('Time, S')
+        
+        ax11 = self.figure1.add_subplot(gs[1,1])
+        ax11.plot(time[::10],cy5[::10],color='blue',linestyle='None',marker='.',label='Raw')
+        ax11.axhline(cy5_guess[0],color='red', label='Bkgnd')
+        ax11.axhline(cy5_guess[0]+3*cy5_guess[1],color='green', label='Thld')
+        ax11.legend()     
+        ax11.set_title('Cy5 raw data (every 10th)')
+        ax11.set_ylabel('Count, kHz')
+        ax11.set_xlabel('Time, S')
+        self.figure1.tight_layout()
+        self.canvas1.draw()
+        return cy3_guess[0],cy3_guess[1],cy5_guess[0],cy5_guess[1]
+
+
+    
+    def show_graph(self,data,settings):
+        cy3_bgnd,cy3_sigma,cy5_bgnd,cy5_sigma=self.plot_raw(data,settings)
+        time=data[:,0]
+        cy3=data[:,2]
+        cy5=data[:,1]
+        FG=cy3 - cy3_bgnd #np.average(cy3) 
+        FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
+        select = (FG > settings['TD']*cy3_sigma) | (FR > settings['TD']*cy5_sigma)
         #select = (FG > settings['TD']) & (FR > settings['TA'])
         FG=FG[select]
         FR=FR[select]
@@ -125,20 +205,9 @@ class MainWindow(QtGui.QMainWindow):
         FR=FR-acceptor_cross
         gamma=(float(settings['QA'])*settings['gR'])/(float(settings['QD'])*settings['gG'])
         E=FR/(FR+gamma*FG)
-        result=np.histogram(E,np.arange(-0.2,1.25,0.05),normed=True)
+        result=np.histogram(E,np.arange(-0.2,1.25,0.05),normed=False)
         
-#        fret = pft.FRET_data(data[:,2],data[:,1])
-#        
-#        threshold_donor = 7 # donor threshold
-#        threshold_acceptor = 5 # acceptor threshold
-#        
-#        cross_DtoA = 0.20 # fractional crosstalk from donor to acceptor
-#        cross_AtoD = 0.01 # fractional crosstalk from acceptor to donor
-#        
-#        fret.threshold_SUM(threshold_donor)
-#        fret.subtract_bckd(settings['BG'],settings['BR'])
-#        fret.subtract_crosstalk(settings['aDA'], settings['aAD'])
-#        
+       
         
         ax = self.figure.add_subplot(111)
         ax.hold(False)
@@ -193,7 +262,20 @@ class Calculator(QtCore.QObject):
         dictionary={'result':{'Value':str(status)}}
         self.signal_update_table.emit(dictionary)
         self.finished.emit()
-        
+
+def norm(x, mean, sd):
+  norm = []
+  for i in range(x.size):
+    norm += [1.0/(sd*np.sqrt(2*np.pi))*np.exp(-(x[i] - mean)**2/(2*sd**2))]
+  return np.array(norm)
+
+def res(p, y, x):
+  m,  sd1  = p
+  m1 = m
+  
+  y_fit = norm(x, m1, sd1)
+  err = y - y_fit
+  return err      
         
 def main():
     
