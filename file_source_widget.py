@@ -42,11 +42,15 @@ class FileSourceWidget(QtGui.QWidget):
         removeFiles = QtGui.QPushButton("Remove selected")
         removeFiles.clicked.connect(self.removeSelected)
         
+        calcSelected = QtGui.QPushButton("Calc selected")
+        calcSelected.clicked.connect(self.calcSelected)
+        
 
         self.mainLayout = QtGui.QVBoxLayout(self)
         self.mainLayout.addWidget(openFiles)
         self.mainLayout.addWidget(removeFiles)
         self.mainLayout.addWidget(self.foldersScrollArea)
+        self.mainLayout.addWidget(calcSelected)
         self.setMaximumWidth(300)
         self.setGeometry(300, 200, 200, 400)
         self.checkAllBox = QtGui.QCheckBox('Check/Uncheck All', self)
@@ -87,6 +91,13 @@ class FileSourceWidget(QtGui.QWidget):
                 paths.append(self.fileWidgetList[i].path)
         return paths
         
+    def getSelectedData(self):
+        data=[]
+        for i in range(len(self.fileWidgetList)):
+            if self.fileWidgetList[i].checkState.isChecked():
+                data.append(self.fileWidgetList[i].data)
+        return data
+        
         
     def checkAll(self):
         [self.fileWidgetList[i].checkState.setChecked(True) for i in range(len(self.fileWidgetList))]
@@ -95,11 +106,14 @@ class FileSourceWidget(QtGui.QWidget):
     def unCheckAll(self):
         [self.fileWidgetList[i].checkState.setChecked(False) for i in range(len(self.fileWidgetList))]
         
-    def sendUpdateSignal(self,data):
+    def sendUpdateSignal(self,data,path):
         '''
         Wiget emits this signal, when file is clicked
         '''
-        self.emit(QtCore.SIGNAL("updateFilePreview"),data)
+        self.emit(QtCore.SIGNAL("updateFilePreview"),data,path)
+        
+    def calcSelected(self):
+        self.emit(QtCore.SIGNAL("runCalculations"))
         
 
 class fileIconWidget(QtGui.QWidget):
@@ -126,7 +140,7 @@ class fileIconWidget(QtGui.QWidget):
         self.Layout.addWidget(self.r_button,0,1)
     
     def sendUpdateSignal(self):
-        self.emit(QtCore.SIGNAL("updateFilePreview"),self.data)
+        self.emit(QtCore.SIGNAL("updateFilePreview"),self.data,self.path)
 
 
 def main():
