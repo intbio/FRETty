@@ -14,7 +14,7 @@
 # Cheers, Satary.
 #
 
-import sys,os,time
+import sys,os,time,operator
 import numpy as np
 from PyQt4 import QtGui, QtCore
 from table_widget import TableWidget
@@ -23,6 +23,7 @@ from file_source_widget import FileSourceWidget
 from settings_widget import SettingsWidget
 from scipy.optimize import leastsq
 from sklearn import mixture
+
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
@@ -352,6 +353,10 @@ def fit_mixture(data, ncomp=2, doplot=False):
     ms = [m[0] for m in ml]
     cs = [np.sqrt(c) for c in cl]
     ws = [w for w in wl]
+    #s=sorted(zip(ml,cs,ws))
+    #ml=[e[0] for e in s]
+    #cs=[e[1] for e in s]
+    #ws=[e[2] for e in s]
     return ms, cs, ws
 
 if __name__ == '__main__':
