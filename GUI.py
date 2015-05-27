@@ -25,6 +25,13 @@ from scipy.optimize import leastsq
 from sklearn import mixture
 
 
+import matplotlib
+matplotlib.use('QT4Agg')
+
+#### Uncomment these lines if building py2exe binary with window output only
+import warnings
+warnings.simplefilter('ignore')
+
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
 import matplotlib.pyplot as plt
