@@ -59,8 +59,6 @@ class MainWindow(QtGui.QMainWindow):
         self.fileMenu=FileSourceWidget(self)
 
         mainWidget.addWidget(self.fileMenu)
-        
-
         tabs = QtGui.QTabWidget(self)
     
         images=QtGui.QWidget(self)
