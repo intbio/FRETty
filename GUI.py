@@ -64,10 +64,11 @@ class MainWindow(QtGui.QMainWindow):
         tabs = QtGui.QTabWidget(self)
     
         images=QtGui.QWidget(self)
+        highlightColot = str(tabs.palette().color(QtGui.QPalette.HighlightedText).name())
         imagesLayout=QtGui.QVBoxLayout(images)
         tabs.addTab(images,"Simple spFRET")
         
-        self.figure = plt.figure()
+        self.figure = plt.figure(facecolor=highlightColot)
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
         imagesLayout.addWidget(self.canvas)
@@ -82,7 +83,7 @@ class MainWindow(QtGui.QMainWindow):
         fastFRET=QtGui.QWidget(self)
         fastFRETLayout=QtGui.QVBoxLayout(fastFRET)
         tabs.addTab(fastFRET,"Raw data")
-        self.figure1 = plt.figure()
+        self.figure1 = plt.figure(facecolor=highlightColot)
         self.canvas1 = FigureCanvas(self.figure1)
         self.toolbar1 = NavigationToolbar(self.canvas1, self)
         fastFRETLayout.addWidget(self.canvas1)
