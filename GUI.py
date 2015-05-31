@@ -56,7 +56,6 @@ class MainWindow(QtGui.QMainWindow):
         '''
         mainWidget = QtGui.QSplitter(QtCore.Qt.Horizontal)
         mainWidget.setSizes([1,3])
-        
         self.fileMenu=FileSourceWidget(self)
 
         mainWidget.addWidget(self.fileMenu)
@@ -88,6 +87,12 @@ class MainWindow(QtGui.QMainWindow):
         self.toolbar1 = NavigationToolbar(self.canvas1, self)
         fastFRETLayout.addWidget(self.canvas1)
         fastFRETLayout.addWidget(self.toolbar1)
+        
+        results=QtGui.QWidget(self)
+        resultsLayout=QtGui.QVBoxLayout(results)
+        tabs.addTab(results,"Results")
+        self.tableWidget=TableWidget(self)
+        resultsLayout.addWidget(self.tableWidget)
         
         mainWidget.addWidget(tabs)
         
@@ -250,7 +255,9 @@ class MainWindow(QtGui.QMainWindow):
         ax.set_position([box.x0, box.y0 + box.height * 0.1,
                  box.width, box.height * 0.9])
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=5)
-
+        table=np.vstack((axis,np.round(result[0],4),np.round(gaus1,4),np.round(gaus2,4))).transpose()
+        self.tableWidget.buildFromList(np.vstack((['FRET eff.','Amount','Fitted 1', 'Fitted 2'],table)),False)
+        
         self.canvas.draw()
         
 

@@ -13,7 +13,7 @@
 # Cheers, Satary.
 #
 import sys, os
-from PyQt4 import QtGui,QtCore
+from PyQt4 import QtGui, QtCore
 import numpy as np
 
 class FileSourceWidget(QtGui.QWidget):

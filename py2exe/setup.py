@@ -5,7 +5,7 @@
 #    Copyright (C) 2015  Grigory A. Armeev
 #
 #    This program is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License version 2 as·
+#    it under the terms of the GNU General Public License version 2 asÂ·
 #    published by the Free Software Foundation.
 #
 #    This program is distributed in the hope that it will be useful,
@@ -18,7 +18,7 @@
 #    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 from distutils.core import setup
-import py2exe, sys, os
+import py2exe, sys, os, csv
 
 #import skimage
 import matplotlib

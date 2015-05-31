@@ -15,6 +15,7 @@
 
 from PyQt4 import QtGui,QtCore
 import sys, csv
+import numpy as np
 class TableWidget(QtGui.QTableWidget):
     def __init__(self,parent=None):
         super(TableWidget, self).__init__(parent)
@@ -34,7 +35,34 @@ class TableWidget(QtGui.QTableWidget):
         self.verticalHeader().sectionMoved.connect( self.getOrders)
         self.horizontalHeader().sectionMoved.connect( self.getOrders)
 
-
+    def buildFromList(self,inList,addHeaders=True):
+        '''
+        This methods builds table from rectangular 2D list or np.array
+        where 1 column and 1 line contain names of lines and columns
+        '''
+        self.setRowCount(0)
+        self.setColumnCount(0)
+        if addHeaders:
+            for row in inList[1:,0]:
+                self.insertRow(self.rowCount())
+                self.setVerticalHeaderItem(self.rowCount()-1, QtGui.QTableWidgetItem(row))
+            for col in inList[0,1:]:
+                self.insertColumn(self.columnCount())
+                self.setHorizontalHeaderItem(self.columnCount()-1,QtGui.QTableWidgetItem(col))
+            inList=inList[1:,1:]
+        #asidning values       
+        else:
+            for row in inList[:,0]:
+                self.insertRow(self.rowCount())
+            for col in inList[0,:]:
+                self.insertColumn(self.columnCount())
+        it = np.nditer(inList, flags=['multi_index'])
+        while not it.finished:
+            self.setItem(it.multi_index[0],it.multi_index[1],QtGui.QTableWidgetItem(str(it[0])))
+            it.iternext()
+                      
+        self.verticalHeader().setDefaultSectionSize(self.verticalHeader().minimumSectionSize())
+    
     def buildFromDict(self,inDict,rowOrder=[],columnOrder=[]):
         self.setRowCount(0)
         self.setColumnCount(0)
@@ -72,7 +100,7 @@ class TableWidget(QtGui.QTableWidget):
         for col in columnOrder:
             if col in newCol:
                 visibleCols.append(col)
-        #drawin table and asigning row and column names
+        #drawing table and asigning row and column names
         rows=[]
         columns=[]
         for row in visibleRows:
@@ -126,14 +154,21 @@ class TableWidget(QtGui.QTableWidget):
         if (e.modifiers() & QtCore.Qt.ControlModifier):        
             if e.key() == QtCore.Qt.Key_C:
                 self.copySelectionToClipboard()
+            elif e.key() == QtCore.Qt.Key_A:
+                self.selectAll()
         
     def contextMenuEvent(self, pos):
         menu = QtGui.QMenu()
         copyAction = menu.addAction("Copy")
+        copyAllAction = menu.addAction("Copy All")
+        selectAll = menu.addAction("Select All")
         action = menu.exec_(QtGui.QCursor.pos())
         if action == copyAction:
             self.copySelectionToClipboard()
-    
+        elif action == copyAllAction:
+            self.copySelectionToClipboard(True)
+        elif action == selectAll:
+            self.selectAll()
     def handleSave(self,path):
         rowLog = range(self.rowCount())
         rowIndx = [self.visualRow(i) for i in rowLog]
@@ -164,9 +199,17 @@ class TableWidget(QtGui.QTableWidget):
                     else:
                         rowdata.append('')
                 writer.writerow(rowdata)    
-    
-    def copySelectionToClipboard(self):
-        selected = self.selectedRanges()
+
+    def selectAll(self):    
+        self.setRangeSelected(QtGui.QTableWidgetSelectionRange( 0,0, self.rowCount()-1, self.columnCount()-1)
+                                , True)
+            
+              
+    def copySelectionToClipboard(self,all=False):
+        if all:
+            selected = [QtGui.QTableWidgetSelectionRange( 0,0, self.rowCount()-1, self.columnCount()-1)]
+        else:
+            selected = self.selectedRanges()
         s = ""
         for r in xrange(selected[0].topRow(),selected[0].bottomRow()+1):
             for c in xrange(selected[0].leftColumn(),selected[0].rightColumn()+1):
