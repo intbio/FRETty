@@ -53,7 +53,7 @@ mydata_files += matplotlib.get_py2exe_datafiles()
 setup(
 #    options = {'py2exe': {'bundle_files': 1}},
 #    windows=[{'script':script, "icon_resources":[(1, icon)]}],
-    windows=[{'script':script}],
+#    windows=[{'script':script}],
     data_files = mydata_files,
     options={"py2exe":{"includes":[\
             "sip",\
@@ -72,7 +72,7 @@ setup(
             'excludes': ['_gtkagg', 'tkagg','wxagg']}},
 #
 # Uncomment the next line if you want to see console output:           
-#    console = [{'script': script}],
+    console = [{'script': script}],
 # If console output is off warnings should be supressed in simple_gui.py
 #
     zipfile = None,

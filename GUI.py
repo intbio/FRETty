@@ -22,6 +22,7 @@ from image_widget import ImageWidget
 from file_source_widget import FileSourceWidget
 from settings_widget import SettingsWidget
 from scipy.optimize import leastsq
+#from scipy.signal import find_peaks_cwt
 from sklearn import mixture
 
 
@@ -158,7 +159,7 @@ class MainWindow(QtGui.QMainWindow):
         cy3_guess=plsq_cy3[0]/(timestep*1000)
         cy5_guess=plsq_cy5[0]/(timestep*1000)
         cy3_thld=cy3_guess[1]*settings['TD']
-        cy5_thld=cy5_guess[1]*settings['TD']
+        cy5_thld=cy5_guess[1]*settings['TA']
         #ms, cs , ws = fit_mixture(cy3.reshape(cy3.size,1),1)
         #gaus2=ws[0]*mlab.normpdf(x_axis,ms[0],cs[0])
         
@@ -224,8 +225,12 @@ class MainWindow(QtGui.QMainWindow):
         FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
         
         select = (FG > cy3_sigma) | (FR > cy5_sigma)
+        #select = find_peaks_cwt(FG,np.arange(1,4)) and find_peaks_cwt(FR,np.arange(1,4))
+        
+        
         #select = (FG > settings['TD']) & (FR > settings['TA'])
         FG=FG[select]
+        print FG.size
         FR=FR[select]
         donor_cross= settings['aAD']*FG
         acceptor_cross=settings['aDA']*FR

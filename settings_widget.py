@@ -50,11 +50,11 @@ class SettingsWidget(QtGui.QWidget):
         self.gG=QtGui.QDoubleSpinBox(self)
         self.gG.setRange(0,1)
         self.gG.setSingleStep(0.01)
-        self.gG.setValue(0.65)
+        self.gG.setValue(1.00)
         self.gG.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.gG)
         
-        text=QtGui.QLabel('Thresh Multiply:')
+        text=QtGui.QLabel('Thresh D Multiply:')
         mainLayout.addWidget(text)
         self.TD=QtGui.QDoubleSpinBox(self)
         self.TD.setRange(0,1000)
@@ -62,6 +62,15 @@ class SettingsWidget(QtGui.QWidget):
         self.TD.setValue(9)
         self.TD.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.TD)
+        
+        text=QtGui.QLabel('Thresh A Multiply:')
+        mainLayout.addWidget(text)
+        self.TA=QtGui.QDoubleSpinBox(self)
+        self.TA.setRange(0,1000)
+        self.TA.setSingleStep(0.1)
+        self.TA.setValue(9)
+        self.TA.valueChanged.connect(self.collectSettings)
+        mainLayout.addWidget(self.TA)
         
         
         text=QtGui.QLabel('Direct excit.:')
@@ -78,7 +87,7 @@ class SettingsWidget(QtGui.QWidget):
         self.aAD=QtGui.QDoubleSpinBox(self)
         self.aAD.setRange(0,1)
         self.aAD.setSingleStep(0.01)
-        self.aAD.setValue(0.1)
+        self.aAD.setValue(0.01)
         self.aAD.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.aAD)
         
@@ -90,6 +99,7 @@ class SettingsWidget(QtGui.QWidget):
         self.aDA.setValue(0.19)
         self.aDA.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.aDA)
+        
 
         
     def collectSettings(self):
@@ -98,6 +108,7 @@ class SettingsWidget(QtGui.QWidget):
         'gR':self.gR.value(),
         'gG':self.gG.value(),
         'TD':self.TD.value(),
+        'TA':self.TA.value(),
         'DE':self.DE.value(),
         'aAD':self.aAD.value(),
         'aDA':self.aDA.value()}
