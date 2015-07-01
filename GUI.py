@@ -124,11 +124,33 @@ class MainWindow(QtGui.QMainWindow):
         self.name=name
         self.show_graph(self.data,self.settings,name)
         
+#'QD'
+#'QA'
+#'kD'
+#'kA'
+#'BD'
+#'BA'
+#'CD'
+#'CA'
+#'TD'
+#'TA'
+#'ND'
+#'NA'
+#'DE'
+#'aAD'
+#'aDA'
+#'threshMethod''Auto (gauss)''Manual thresholds''Select top events'
+#'threshLogic' 'OR' 'AND' 'SUM'
+#'backgrMetod 'Auto (gauss)' 'Manual'
+#'nGausFit'
+
+       
     def plot_raw(self,data,settings,showplots=True):
-        time=data[:,0]
-        cy3=data[:,2]
-        cy5=data[:,1]
-        timestep=np.average(time[1:]-time[:-1])
+        time=data.time
+        cy3=data.donor
+        cy5=data.acceptor
+        timestep=data.timestep
+        
         cy3_int=np.round(timestep*cy3*1000)
         cy5_int=np.round(timestep*cy5*1000)
         max=[cy3_int.max() if cy5_int.max()<=cy3_int.max() else cy5_int.max()][0]
@@ -150,8 +172,25 @@ class MainWindow(QtGui.QMainWindow):
         x_axis=x_axis/(timestep*1000)
         cy3_guess=plsq_cy3[0]/(timestep*1000)
         cy5_guess=plsq_cy5[0]/(timestep*1000)
-        cy3_thld=cy3_guess[1]*settings['TD']
-        cy5_thld=cy5_guess[1]*settings['TA']
+        if settings['threshMethod']=='Auto (gauss)':
+            if settings['threshLogic']=='SUM':
+                cy3_thld=(cy3_guess[1]+cy5_guess[1])*settings['CD']
+                cy5_thld=(cy3_guess[1]+cy5_guess[1])*settings['CD']
+            else:
+                cy3_thld=cy3_guess[1]*settings['CD']
+                cy5_thld=cy5_guess[1]*settings['CA']
+        elif settings['threshMethod']=='Manual thresholds':
+            cy3_thld=settings['TD']
+            cy5_thld=settings['TA']
+        
+        if settings['backgrMetod']=='Auto (gauss)':
+            cy3_bgrnd=cy3_guess[0]
+            cy5_bgrnd=cy5_guess[0]
+        elif settings['backgrMetod']=='Manual':
+            cy3_bgrnd=settings['BD']
+            cy5_bgrnd=settings['BA']
+
+        
         #ms, cs , ws = fit_mixture(cy3.reshape(cy3.size,1),1)
         #gaus2=ws[0]*mlab.normpdf(x_axis,ms[0],cs[0])
         
@@ -162,8 +201,8 @@ class MainWindow(QtGui.QMainWindow):
             ax00.plot(x_axis, cy3_hist,color='blue', label='Raw')
             #ax00.hist(cy3,np.arange(0,max,1/(timestep*1000)), label='Raw',normed=True)
             ax00.plot(x_axis, cy3_est,color='black', label='Fitted')
-            ax00.axvline(cy3_guess[0],color='red', label='Bkgnd',linewidth=3)
-            ax00.axvline(cy3_guess[0]+cy3_thld,color='green', label='Thld',linewidth=3)
+            ax00.axvline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=3)
+            ax00.axvline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=3)
             #ax00.plot(x_axis,gaus2, linewidth=3)
             ax00.legend()   
             ax00.set_title('Cy3 hist')
@@ -176,8 +215,8 @@ class MainWindow(QtGui.QMainWindow):
             ax01 = self.figure1.add_subplot(gs[0,1])
             ax01.plot(x_axis, cy5_hist,color='blue', label='Raw')
             ax01.plot(x_axis, cy5_est,color='black', label='Fitted')
-            ax01.axvline(cy5_guess[0],color='red', label='Bkgnd',linewidth=3)
-            ax01.axvline(cy5_guess[0]+cy5_thld,color='green', label='Thld',linewidth=3)
+            ax01.axvline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=3)
+            ax01.axvline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=3)
             ax01.legend() 
             ax01.set_title('Cy5 hist')
             ax01.set_ylabel('Amount')
@@ -187,8 +226,8 @@ class MainWindow(QtGui.QMainWindow):
                     
             ax10 = self.figure1.add_subplot(gs[1,0])
             ax10.plot(time[::10],cy3[::10],color='blue',linestyle='None',marker='.',label='Raw')
-            ax10.axhline(cy3_guess[0],color='red', label='Bkgnd',linewidth=3)
-            ax10.axhline(cy3_guess[0]+cy3_thld,color='green', label='Thld',linewidth=3)
+            ax10.axhline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=3)
+            ax10.axhline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=3)
             ax10.legend()   
             ax10.set_title('Cy3 raw data (every 10th)')
             ax10.set_ylabel('Count, kHz')
@@ -196,27 +235,32 @@ class MainWindow(QtGui.QMainWindow):
             
             ax11 = self.figure1.add_subplot(gs[1,1])
             ax11.plot(time[::10],cy5[::10],color='blue',linestyle='None',marker='.',label='Raw')
-            ax11.axhline(cy5_guess[0],color='red', label='Bkgnd',linewidth=3)
-            ax11.axhline(cy5_guess[0]+cy5_thld,color='green', label='Thld',linewidth=3)
+            ax11.axhline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=3)
+            ax11.axhline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=3)
             ax11.legend()     
             ax11.set_title('Cy5 raw data (every 10th)')
             ax11.set_ylabel('Count, kHz')
             ax11.set_xlabel('Time, S')
             self.figure1.tight_layout()
             self.canvas1.draw()
-        return cy3_guess[0],cy3_thld,cy5_guess[0],cy5_thld
+        
+        return cy3_bgrnd,cy3_thld,cy5_bgrnd,cy5_thld
 
 
     
     def show_graph(self,data,settings,name):
-        cy3_bgnd,cy3_sigma,cy5_bgnd,cy5_sigma=self.plot_raw(data,settings)
-        time=data[:,0]
-        cy3=data[:,2]
-        cy5=data[:,1]
+        cy3_bgnd,donor_thld,cy5_bgnd,acceptor_thld=self.plot_raw(data,settings)
+        time=data.time
+        cy3=data.donor
+        cy5=data.acceptor
         FG=cy3 - cy3_bgnd #np.average(cy3) 
         FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
-        
-        select = (FG > cy3_sigma) | (FR > cy5_sigma)
+        if settings['threshLogic']=='AND':
+            select = (FG > donor_thld) & (FR > acceptor_thld)
+        elif settings['threshLogic']=='OR':
+            select = (FG > donor_thld) | (FR > acceptor_thld)
+        elif settings['threshLogic']=='SUM':
+            select = (FG + FR > donor_thld)
         #select = find_peaks_cwt(FG,np.arange(1,4)) and find_peaks_cwt(FR,np.arange(1,4))
         
         
@@ -231,6 +275,7 @@ class MainWindow(QtGui.QMainWindow):
         gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
         E=FR/(FR+gamma*FG)
         ms, cs , ws = fit_mixture(E.reshape(E.size,1))
+        
         result=np.histogram(E,np.arange(-0.2,1.25,0.025),normed=True)     
         self.figure.clf()
         ax = self.figure.add_subplot(111)

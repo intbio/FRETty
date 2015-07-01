@@ -65,7 +65,7 @@ class FileSourceWidget(QtGui.QWidget):
         qstringlist=QtGui.QFileDialog.getOpenFileNames(self,'Open Image',filter=self.filters)
         if qstringlist.isEmpty:
             for i in range(len(qstringlist)):
-                self.fileList.append(qstringlist[i])
+                self.fileList.append(unicode(qstringlist[i]))
             self.fileList.removeDuplicates()
             self.fileList.sort()
             self.rebuildFileWidgetList() 
@@ -179,5 +179,13 @@ def open_lsm_txt(path):
             if len(line.split()) == 4:
                 break
         j+=1
-    data=np.genfromtxt(path,skip_header=2,skip_footer=j,usecols=(0,1,3))
+    raw=np.genfromtxt(path,skip_header=2,skip_footer=j,usecols=(0,1,3))
+    data=fretData(raw[:,0],raw[:,2],raw[:,1])
     return data
+    
+class fretData:
+    def __init__(self,time,donor,acceptor):
+        self.time=time
+        self.donor=donor
+        self.acceptor=acceptor
+        self.timestep=np.average(time[1:]-time[:-1])

@@ -143,6 +143,7 @@ class SettingsWidget(QtGui.QWidget):
         self.ThresholdMethod.addItem('Auto (gauss)')
         self.ThresholdMethod.addItem('Manual thresholds')
         self.ThresholdMethod.addItem('Select top events')
+        self.ThresholdMethod.model().item(2).setEnabled(False)
         self.ThresholdMethod.setCurrentIndex(0)        
         self.ThresholdMethod.currentIndexChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.ThresholdMethod,8,2,1,2)
@@ -198,18 +199,18 @@ class SettingsWidget(QtGui.QWidget):
         self.NDtext=QtGui.QLabel('Nd:')
         mainLayout.addWidget(self.NDtext,12,0,1,1)
         self.ND=QtGui.QDoubleSpinBox(self)
-        self.ND.setRange(0,1000)
+        self.ND.setRange(0,100000)
         self.ND.setSingleStep(0.1)
-        self.ND.setValue(9)
+        self.ND.setValue(5000)
         self.ND.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.ND,12,1,1,1)
         
         self.NAtext=QtGui.QLabel('Na:')
         mainLayout.addWidget(self.NAtext,12,2,1,1)
         self.NA=QtGui.QDoubleSpinBox(self)
-        self.NA.setRange(0,1000)
+        self.NA.setRange(0,100000)
         self.NA.setSingleStep(0.1)
-        self.NA.setValue(9)
+        self.NA.setValue(5000)
         self.NA.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.NA,12,3,1,1)        
 
@@ -233,10 +234,16 @@ class SettingsWidget(QtGui.QWidget):
         self.figure = plt.figure(facecolor=windowColor)
         self.canvas = FigureCanvas(self.figure)
         mainLayout.addWidget(self.canvas,14,0,1,4)
+        mainLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.drawFormulas()
+        
+    def drawFormulas(self):
+        self.figure.clf()
         self.figure.suptitle(r"$E=\frac{F_a}{F_a+\gamma_d F_d}$" "\n"
                             r"$F_d=I_d - B_d -\alpha_{ad}(I_a-B_a)$" "\n"
                             r"$F_a=I_a - B_a -\alpha_{da}(I_d-B_d)-DE_a$" "\n" 
-                            r"$\gamma_d=\frac{\Phi_a k_d}{\Phi_d k_a}$" "\n"
+                            r"$\gamma_d=\frac{\Phi_a k_d}{\Phi_d k_a}= " + 
+                            str(round((self.QA.value()*self.kD.value())/(self.QD.value()*self.kA.value()),4))+ "$\n"
                             r"$I - intensity, B - background$" "\n"
                             r"$\alpha - crosstalk, \gamma - instr.coef.$" ,
                       x=0.0, y=0.5, 
@@ -245,8 +252,7 @@ class SettingsWidget(QtGui.QWidget):
                       verticalalignment='center')
         self.canvas.setMaximumWidth(278)
         self.canvas.setMaximumHeight(190)
-        self.canvas.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-        mainLayout.setAlignment(QtCore.Qt.AlignTop)
+        self.canvas.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)        
         self.canvas.draw()
 
     def changeHideStatus(self):
@@ -258,6 +264,7 @@ class SettingsWidget(QtGui.QWidget):
             self.BD.show()
             
         if (self.ThresholdLogic.currentText()=='OR') | (self.ThresholdLogic.currentText()=='AND'):
+            #self.ThresholdMethod.model().item(2).setEnabled(True)
             if self.ThresholdMethod.currentText()=='Auto (gauss)':
                 self.CD.show()
                 self.CDtext.show()       
@@ -272,22 +279,18 @@ class SettingsWidget(QtGui.QWidget):
                 self.ND.show()
                 self.NDtext.show()
                 self.NA.show()
-                self.NAtext.show()    
+                self.NAtext.show()   
+        else:            
+            #self.ThresholdMethod.model().item(2).setEnabled(False)
+            if self.ThresholdMethod.currentText()=='Select top events':
+                self.ThresholdMethod.setCurrentIndex(0)
+            elif self.ThresholdMethod.currentText()=='Auto (gauss)':
+                self.CD.show()
+                self.CDtext.show()       
+            elif self.ThresholdMethod.currentText()=='Manual thresholds':
+                self.TD.show()
+                self.TDtext.show()
             
-#        self.ThresholdMethod
-#        self.ThresholdLogic
-#        self.CD
-#        self.CDtext        
-#        self.CA
-#        self.CAtext        
-#        self.TD
-#        self.TDtext        
-#        self.TA
-#        self.TAtext        
-#        self.ND
-#        self.NDtext        
-#        self.NA
-#        self.NAtext        
     def hideAll(self):
         self.BAtext.hide()
         self.BA.hide()
@@ -308,15 +311,26 @@ class SettingsWidget(QtGui.QWidget):
         
     def collectSettings(self):
         self.changeHideStatus()
-        settings={'QA':self.QA.value(),
-        'QD':self.QD.value(),
-        'kA':self.kA.value(),
+        self.drawFormulas()
+        settings={'QD':self.QD.value(),
+        'QA':self.QA.value(),
         'kD':self.kD.value(),
+        'kA':self.kA.value(),
+        'BD':self.BD.value(),
+        'BA':self.BA.value(),
+        'CD':self.CD.value(),
+        'CA':self.CA.value(),
         'TD':self.TD.value(),
         'TA':self.TA.value(),
+        'ND':self.ND.value(),
+        'NA':self.NA.value(),
         'DE':self.DE.value(),
         'aAD':self.aAD.value(),
-        'aDA':self.aDA.value()}
+        'aDA':self.aDA.value(),
+        'threshMethod':self.ThresholdMethod.currentText(),
+        'threshLogic':self.ThresholdLogic.currentText(),
+        'backgrMetod':self.BackGrSubMethod.currentText(),
+        'nGausFit':self.gausFitting.currentIndex()}
         self.emit(QtCore.SIGNAL("settingsUpdatedSignal"),settings)
         return settings
 
@@ -326,7 +340,6 @@ def main():
     ex = SettingsWidget(workDir)
     ex.show()
     sys.exit(app.exec_())
-
-
+    
 if __name__ == '__main__':
     main()    
