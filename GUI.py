@@ -27,7 +27,7 @@ from sklearn import mixture
 
 
 import matplotlib
-matplotlib.use('QT4Agg')
+#matplotlib.use('QT4Agg')
 
 #### Uncomment these lines if building py2exe binary with window output only
 import warnings
@@ -56,14 +56,17 @@ class MainWindow(QtGui.QMainWindow):
         Setting up Interface
         '''
         mainWidget = QtGui.QSplitter(QtCore.Qt.Horizontal)
-        mainWidget.setSizes([1,3])
+        
         self.fileMenu=FileSourceWidget(self)
 
         mainWidget.addWidget(self.fileMenu)
+        tabsAndSettingsWidget=QtGui.QWidget(self)
+        tabsAndSettingsLayout=QtGui.QHBoxLayout(tabsAndSettingsWidget)
+        
         tabs = QtGui.QTabWidget(self)
     
         images=QtGui.QWidget(self)
-        highlightColot = str(tabs.palette().color(QtGui.QPalette.HighlightedText).name())
+        highlightColot = str('white')#tabs.palette().color(QtGui.QPalette.HighlightedText).name())
         imagesLayout=QtGui.QVBoxLayout(images)
         tabs.addTab(images,"Simple spFRET")
         
@@ -72,11 +75,6 @@ class MainWindow(QtGui.QMainWindow):
         self.toolbar = NavigationToolbar(self.canvas, self)
         imagesLayout.addWidget(self.canvas)
         imagesLayout.addWidget(self.toolbar)
-        #self.preview=ImageWidget(self)  
-        #imagesLayout.addWidget(self.preview)
-        
-        #self.result=ImageWidget(self)  
-        #imagesLayout.addWidget(self.result)
         
        
         fastFRET=QtGui.QWidget(self)
@@ -93,23 +91,17 @@ class MainWindow(QtGui.QMainWindow):
         tabs.addTab(results,"Results")
         self.tableWidget=TableWidget(self)
         resultsLayout.addWidget(self.tableWidget)
+        tabsAndSettingsLayout.addWidget(tabs)
         
-        mainWidget.addWidget(tabs)
-        
-        controlWidget=QtGui.QWidget(self)
-        controlLayout=QtGui.QVBoxLayout(controlWidget)
-        controlLayout.setAlignment(QtCore.Qt.AlignTop)
         
         self.settingsWidget=SettingsWidget(self)
-        controlLayout.addWidget(self.settingsWidget)     
         self.settings=self.settingsWidget.collectSettings()
-
-        #self.pbar = QtGui.QProgressBar(self) 
-        #controlLayout.addWidget(self.pbar)    
         
-        mainWidget.addWidget(controlWidget)
+        tabsAndSettingsLayout.addWidget(self.settingsWidget)
+        mainWidget.addWidget(tabsAndSettingsWidget)
         self.setCentralWidget(mainWidget)
         self.setWindowTitle('FRETTY')   
+        
         
         self.assignConnections()
         
@@ -236,7 +228,7 @@ class MainWindow(QtGui.QMainWindow):
         acceptor_cross=settings['aDA']*FR
         FG=FG-donor_cross
         FR=FR-acceptor_cross
-        gamma=(float(settings['QA'])*settings['gR'])/(float(settings['QD'])*settings['gG'])
+        gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
         E=FR/(FR+gamma*FG)
         ms, cs , ws = fit_mixture(E.reshape(E.size,1))
         result=np.histogram(E,np.arange(-0.2,1.25,0.025),normed=True)     
@@ -289,7 +281,7 @@ class MainWindow(QtGui.QMainWindow):
         acceptor_cross=settings['aDA']*FR
         FG=FG-donor_cross
         FR=FR-acceptor_cross
-        gamma=(float(settings['QA'])*settings['gR'])/(float(settings['QD'])*settings['gG'])
+        gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
         E=FR/(FR+gamma*FG)
         ms, cs , ws = fit_mixture(E.reshape(E.size,1))
         result=np.histogram(E,np.arange(-0.2,1.25,0.025),normed=True)     
