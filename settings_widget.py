@@ -106,6 +106,19 @@ class SettingsWidget(QtGui.QWidget):
         self.DE.setToolTip(tooltip)        
         mainLayout.addWidget(self.DE)
         
+        text=QtGui.QLabel('N bins')
+        tooltip=u'Amount od bins for FRET E histogram'
+        text.setToolTip(tooltip)        
+        mainLayout.addWidget(text)
+        self.histBins=QtGui.QDoubleSpinBox(self)
+        self.histBins.setRange(0,1000)
+        self.histBins.setSingleStep(1)
+        self.histBins.setValue(100)
+        self.histBins.valueChanged.connect(self.collectSettings)
+        self.histBins.setToolTip(tooltip)        
+        mainLayout.addWidget(self.histBins)
+        
+        
 ###################### BACKGROUND METHODS ############################   
         
         text=QtGui.QLabel('Background substraction:')
@@ -143,7 +156,7 @@ class SettingsWidget(QtGui.QWidget):
         self.ThresholdMethod.addItem('Auto (gauss)')
         self.ThresholdMethod.addItem('Manual thresholds')
         self.ThresholdMethod.addItem('Select top events')
-        self.ThresholdMethod.model().item(2).setEnabled(False)
+        #self.ThresholdMethod.model().item(2).setEnabled(False)
         self.ThresholdMethod.setCurrentIndex(0)        
         self.ThresholdMethod.currentIndexChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.ThresholdMethod,8,2,1,2)
@@ -224,6 +237,7 @@ class SettingsWidget(QtGui.QWidget):
         self.gausFitting.addItem('2')
         self.gausFitting.addItem('3')
         self.gausFitting.addItem('4')
+        self.gausFitting.addItem('5')
         self.gausFitting.setCurrentIndex(0)        
         self.gausFitting.currentIndexChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.gausFitting,13,2,1,2) 
@@ -264,7 +278,8 @@ class SettingsWidget(QtGui.QWidget):
             self.BD.show()
             
         if (self.ThresholdLogic.currentText()=='OR') | (self.ThresholdLogic.currentText()=='AND'):
-            #self.ThresholdMethod.model().item(2).setEnabled(True)
+            self.ThresholdMethod.model().item(2).setEnabled(True)
+            self.ThresholdLogic.model().item(2).setEnabled(True)
             if self.ThresholdMethod.currentText()=='Auto (gauss)':
                 self.CD.show()
                 self.CDtext.show()       
@@ -276,12 +291,13 @@ class SettingsWidget(QtGui.QWidget):
                 self.TA.show()
                 self.TAtext.show()  
             elif self.ThresholdMethod.currentText()=='Select top events':
+                self.ThresholdLogic.model().item(2).setEnabled(False)
                 self.ND.show()
                 self.NDtext.show()
                 self.NA.show()
                 self.NAtext.show()   
         else:            
-            #self.ThresholdMethod.model().item(2).setEnabled(False)
+            self.ThresholdMethod.model().item(2).setEnabled(False)
             if self.ThresholdMethod.currentText()=='Select top events':
                 self.ThresholdMethod.setCurrentIndex(0)
             elif self.ThresholdMethod.currentText()=='Auto (gauss)':
@@ -327,6 +343,7 @@ class SettingsWidget(QtGui.QWidget):
         'DE':self.DE.value(),
         'aAD':self.aAD.value(),
         'aDA':self.aDA.value(),
+        'histBins':self.histBins.value(),
         'threshMethod':self.ThresholdMethod.currentText(),
         'threshLogic':self.ThresholdLogic.currentText(),
         'backgrMetod':self.BackGrSubMethod.currentText(),

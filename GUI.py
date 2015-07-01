@@ -139,6 +139,7 @@ class MainWindow(QtGui.QMainWindow):
 #'DE'
 #'aAD'
 #'aDA'
+#'histBins'
 #'threshMethod''Auto (gauss)''Manual thresholds''Select top events'
 #'threshLogic' 'OR' 'AND' 'SUM'
 #'backgrMetod 'Auto (gauss)' 'Manual'
@@ -172,6 +173,13 @@ class MainWindow(QtGui.QMainWindow):
         x_axis=x_axis/(timestep*1000)
         cy3_guess=plsq_cy3[0]/(timestep*1000)
         cy5_guess=plsq_cy5[0]/(timestep*1000)
+        if settings['backgrMetod']=='Auto (gauss)':
+            cy3_bgrnd=cy3_guess[0]
+            cy5_bgrnd=cy5_guess[0]
+        elif settings['backgrMetod']=='Manual':
+            cy3_bgrnd=settings['BD']
+            cy5_bgrnd=settings['BA']
+            
         if settings['threshMethod']=='Auto (gauss)':
             if settings['threshLogic']=='SUM':
                 cy3_thld=(cy3_guess[1]+cy5_guess[1])*settings['CD']
@@ -179,17 +187,13 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 cy3_thld=cy3_guess[1]*settings['CD']
                 cy5_thld=cy5_guess[1]*settings['CA']
+                
         elif settings['threshMethod']=='Manual thresholds':
             cy3_thld=settings['TD']
             cy5_thld=settings['TA']
-        
-        if settings['backgrMetod']=='Auto (gauss)':
-            cy3_bgrnd=cy3_guess[0]
-            cy5_bgrnd=cy5_guess[0]
-        elif settings['backgrMetod']=='Manual':
-            cy3_bgrnd=settings['BD']
-            cy5_bgrnd=settings['BA']
-
+        elif settings['threshMethod']=='Select top events':
+            cy3_thld=cy3[np.argpartition(cy3,-settings['ND'])[-settings['ND']:]].min()-cy3_bgrnd
+            cy5_thld=cy5[np.argpartition(cy5,-settings['NA'])[-settings['NA']:]].min()-cy5_bgrnd
         
         #ms, cs , ws = fit_mixture(cy3.reshape(cy3.size,1),1)
         #gaus2=ws[0]*mlab.normpdf(x_axis,ms[0],cs[0])
@@ -225,20 +229,20 @@ class MainWindow(QtGui.QMainWindow):
             ax01.set_xlim(0,np.round(cy5_guess[0]+scale))
                     
             ax10 = self.figure1.add_subplot(gs[1,0])
-            ax10.plot(time[::10],cy3[::10],color='blue',linestyle='None',marker='.',label='Raw')
+            ax10.plot(time,cy3,color='blue',linestyle='None',marker=',',label='Raw')
             ax10.axhline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=3)
             ax10.axhline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=3)
             ax10.legend()   
-            ax10.set_title('Cy3 raw data (every 10th)')
+            ax10.set_title('Cy3 raw data')
             ax10.set_ylabel('Count, kHz')
             ax10.set_xlabel('Time, S')
             
             ax11 = self.figure1.add_subplot(gs[1,1])
-            ax11.plot(time[::10],cy5[::10],color='blue',linestyle='None',marker='.',label='Raw')
+            ax11.plot(time,cy5,color='blue',linestyle='None',marker=',',label='Raw')
             ax11.axhline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=3)
             ax11.axhline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=3)
             ax11.legend()     
-            ax11.set_title('Cy5 raw data (every 10th)')
+            ax11.set_title('Cy5 raw data')
             ax11.set_ylabel('Count, kHz')
             ax11.set_xlabel('Time, S')
             self.figure1.tight_layout()
@@ -256,9 +260,9 @@ class MainWindow(QtGui.QMainWindow):
         FG=cy3 - cy3_bgnd #np.average(cy3) 
         FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
         if settings['threshLogic']=='AND':
-            select = (FG > donor_thld) & (FR > acceptor_thld)
+            select = (FG >= donor_thld) & (FR >= acceptor_thld)
         elif settings['threshLogic']=='OR':
-            select = (FG > donor_thld) | (FR > acceptor_thld)
+            select = (FG >= donor_thld) | (FR >= acceptor_thld)
         elif settings['threshLogic']=='SUM':
             select = (FG + FR > donor_thld)
         #select = find_peaks_cwt(FG,np.arange(1,4)) and find_peaks_cwt(FR,np.arange(1,4))
@@ -274,21 +278,24 @@ class MainWindow(QtGui.QMainWindow):
         FR=FR-acceptor_cross
         gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
         E=FR/(FR+gamma*FG)
-        ms, cs , ws = fit_mixture(E.reshape(E.size,1))
         
-        result=np.histogram(E,np.arange(-0.2,1.25,0.025),normed=True)     
+        
+        result=np.histogram(E,np.linspace(-0.2, 1.2, num=settings['histBins']),normed=True)     
         self.figure.clf()
         ax = self.figure.add_subplot(111)
 #        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
         axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
         ax.plot(axis,result[0],linewidth=3, label='Eff')
-        gaus1=ws[0]*mlab.normpdf(axis,ms[0],cs[0])
-        gaus2=ws[1]*mlab.normpdf(axis,ms[1],cs[1])
-        ax.plot(axis,gaus1, linewidth=2,
-            label='Fit 1, Pos '+str(np.round(ms[0],2))+', '+str(np.round(ws[0]*100,2))+'%')
-        ax.plot(axis,gaus2, linewidth=2,
-            label='Fit 2, Pos '+str(np.round(ms[1],2))+', '+str(np.round(ws[1]*100,2))+'%')
-        ax.plot(axis,gaus1+gaus2, linewidth=2,linestyle='--')
+        
+        if settings['nGausFit']!=0:
+            ms, cs , ws = fit_mixture(E.reshape(E.size,1),settings['nGausFit'])
+            gaus=np.zeros((settings['nGausFit'],axis.size))
+            for i in range(settings['nGausFit']):
+                gaus[i]=ws[i]*mlab.normpdf(axis,ms[i],cs[i])
+                ax.plot(axis,gaus[i], linewidth=2,
+                    label='Fit ' + str(i) +', Pos '+str(np.round(ms[i],2))+', '+str(np.round(ws[i]*100,2))+'%')
+            ax.plot(axis,gaus.sum(0), linewidth=2,linestyle='--')
+        
         ax.set_title(os.path.basename(name))
         ax.set_ylabel('Amount, %')
         ax.set_xlabel('FRET Eff')
@@ -296,8 +303,14 @@ class MainWindow(QtGui.QMainWindow):
         ax.set_position([box.x0, box.y0 + box.height * 0.1,
                  box.width, box.height * 0.9])
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=5)
-        table=np.vstack((axis,np.round(result[0],4),np.round(gaus1,4),np.round(gaus2,4))).transpose()
-        self.tableWidget.buildFromList(np.vstack((['FRET eff.','Amount','Fitted 1', 'Fitted 2'],table)),False)
+        if settings['nGausFit']==0:
+            table=np.vstack((axis,np.round(result[0],4))).transpose()
+            self.tableWidget.buildFromList(np.vstack((['FRET eff.','Amount'],table)),False)
+        else:    
+            table=np.vstack((axis,np.round(result[0],4),gaus)).transpose()
+            header= ['FRET eff.','Amount']
+            [header.append('Fitted ' + str(i)) for i in range(settings['nGausFit'])]
+            self.tableWidget.buildFromList(np.vstack((header,table)),False)
         
         self.canvas.draw()
         
@@ -311,9 +324,9 @@ class MainWindow(QtGui.QMainWindow):
         total_FR=np.array([])
         for data in self.fileMenu.getSelectedData():
             cy3_bgnd,cy3_sigma,cy5_bgnd,cy5_sigma=self.plot_raw(data,self.settings,showplots=False)
-            time=data[:,0]
-            cy3=data[:,2]
-            cy5=data[:,1]
+            time=data.time
+            cy3=data.time
+            cy5=data.time
             FG=cy3 - cy3_bgnd #np.average(cy3) 
             FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
             select = (FG > cy3_sigma) | (FR > cy5_sigma)
