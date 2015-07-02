@@ -12,8 +12,11 @@
 # GNU General Public License v2 for more details.
 import sys, os
 from PyQt4 import QtGui,QtCore
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib
+matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+
 class SettingsWidget(QtGui.QWidget):
     def __init__(self,workdir,parent=None):
         super(SettingsWidget, self).__init__(parent)

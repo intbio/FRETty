@@ -27,7 +27,7 @@ from sklearn import mixture
 
 
 import matplotlib
-#matplotlib.use('QT4Agg')
+matplotlib.use('QT4Agg')
 
 #### Uncomment these lines if building py2exe binary with window output only
 import warnings
