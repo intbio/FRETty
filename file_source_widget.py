@@ -43,6 +43,7 @@ class FileSourceWidget(QtGui.QWidget):
         removeFiles.clicked.connect(self.removeSelected)
         
         calcSelected = QtGui.QPushButton("Calc selected")
+        calcSelected.hide()
         calcSelected.clicked.connect(self.calcSelected)
         
 
@@ -68,6 +69,7 @@ class FileSourceWidget(QtGui.QWidget):
                 self.fileList.append(unicode(qstringlist[i]))
             self.fileList.removeDuplicates()
             self.fileList.sort()
+            print [unicode(self.fileList[i]) for i in range(len(self.fileList))]
             self.rebuildFileWidgetList() 
     
     def rebuildFileWidgetList(self):

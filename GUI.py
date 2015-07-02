@@ -137,6 +137,8 @@ class MainWindow(QtGui.QMainWindow):
 #'ND'
 #'NA'
 #'DE'
+#'UTD'
+#'UTA'
 #'aAD'
 #'aDA'
 #'histBins'
@@ -230,8 +232,9 @@ class MainWindow(QtGui.QMainWindow):
                     
             ax10 = self.figure1.add_subplot(gs[1,0])
             ax10.plot(time,cy3,color='blue',linestyle='None',marker=',',label='Raw')
-            ax10.axhline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=3)
-            ax10.axhline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=3)
+            ax10.axhline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=2)
+            ax10.axhline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=2)
+            ax10.axhline(settings['UTD']-cy3_bgrnd,color='black', label='Up Thld',linewidth=2)
             ax10.legend()   
             ax10.set_title('Cy3 raw data')
             ax10.set_ylabel('Count, kHz')
@@ -239,8 +242,9 @@ class MainWindow(QtGui.QMainWindow):
             
             ax11 = self.figure1.add_subplot(gs[1,1])
             ax11.plot(time,cy5,color='blue',linestyle='None',marker=',',label='Raw')
-            ax11.axhline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=3)
-            ax11.axhline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=3)
+            ax11.axhline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=2)
+            ax11.axhline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=2)
+            ax11.axhline(settings['UTA']-cy5_bgrnd,color='black', label='Up Thld',linewidth=2)
             ax11.legend()     
             ax11.set_title('Cy5 raw data')
             ax11.set_ylabel('Count, kHz')
@@ -265,6 +269,9 @@ class MainWindow(QtGui.QMainWindow):
             select = (FG >= donor_thld) | (FR >= acceptor_thld)
         elif settings['threshLogic']=='SUM':
             select = (FG + FR > donor_thld)
+            
+        selectU = (FG < settings['UTD']) & (FR < settings['UTA'])
+        select= select & selectU
         #select = find_peaks_cwt(FG,np.arange(1,4)) and find_peaks_cwt(FR,np.arange(1,4))
         
         

@@ -225,12 +225,30 @@ class SettingsWidget(QtGui.QWidget):
         self.NA.setSingleStep(0.1)
         self.NA.setValue(5000)
         self.NA.valueChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.NA,12,3,1,1)        
+        mainLayout.addWidget(self.NA,12,3,1,1)    
+        
+        text=QtGui.QLabel(u'D↑thld:')
+        mainLayout.addWidget(text,13,0,1,1)
+        self.UTD=QtGui.QDoubleSpinBox(self)
+        self.UTD.setRange(0,100000)
+        self.UTD.setSingleStep(0.1)
+        self.UTD.setValue(50)
+        self.UTD.valueChanged.connect(self.collectSettings)
+        mainLayout.addWidget(self.UTD,13,1,1,1)
+        
+        text=QtGui.QLabel(u'A↑thld:')
+        mainLayout.addWidget(text,13,2,1,1)
+        self.UTA=QtGui.QDoubleSpinBox(self)
+        self.UTA.setRange(0,100000)
+        self.UTA.setSingleStep(0.1)
+        self.UTA.setValue(50)
+        self.UTA.valueChanged.connect(self.collectSettings)
+        mainLayout.addWidget(self.UTA,13,3,1,1)        
 
 ###################### FITTING METHODS ############################   
 
         text=QtGui.QLabel('Gauss fitting:')
-        mainLayout.addWidget(text,13,0,1,2)
+        mainLayout.addWidget(text,14,0,1,2)
         self.gausFitting=QtGui.QComboBox(self)
         self.gausFitting.addItem('None')
         self.gausFitting.addItem('1')
@@ -240,14 +258,14 @@ class SettingsWidget(QtGui.QWidget):
         self.gausFitting.addItem('5')
         self.gausFitting.setCurrentIndex(0)        
         self.gausFitting.currentIndexChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.gausFitting,13,2,1,2) 
+        mainLayout.addWidget(self.gausFitting,14,2,1,2) 
         
 ###################### FORMULAS ############################  
 
         windowColor = str(self.palette().color(QtGui.QPalette.Window).name())    
         self.figure = plt.figure(facecolor=windowColor)
         self.canvas = FigureCanvas(self.figure)
-        mainLayout.addWidget(self.canvas,14,0,1,4)
+        mainLayout.addWidget(self.canvas,15,0,1,4)
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
         self.drawFormulas()
         
@@ -343,6 +361,8 @@ class SettingsWidget(QtGui.QWidget):
         'DE':self.DE.value(),
         'aAD':self.aAD.value(),
         'aDA':self.aDA.value(),
+        'UTD':self.UTD.value(),
+        'UTA':self.UTA.value(),
         'histBins':self.histBins.value(),
         'threshMethod':self.ThresholdMethod.currentText(),
         'threshLogic':self.ThresholdLogic.currentText(),
