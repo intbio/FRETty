@@ -116,7 +116,7 @@ class SettingsWidget(QtGui.QWidget):
         self.histBins=QtGui.QDoubleSpinBox(self)
         self.histBins.setRange(0,1000)
         self.histBins.setSingleStep(1)
-        self.histBins.setValue(100)
+        self.histBins.setValue(50)
         self.histBins.valueChanged.connect(self.collectSettings)
         self.histBins.setToolTip(tooltip)        
         mainLayout.addWidget(self.histBins)

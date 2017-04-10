@@ -34,7 +34,7 @@ import warnings
 warnings.simplefilter('ignore')
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QTAgg as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.mlab as mlab
@@ -111,18 +111,18 @@ class MainWindow(QtGui.QMainWindow):
         Assigning connections
         '''
         self.connect(self.fileMenu,QtCore.SIGNAL("updateFilePreview"),self.set_data)
-        self.connect(self.fileMenu,QtCore.SIGNAL("runCalculations"),self.run_calculations)
+        self.connect(self.fileMenu,QtCore.SIGNAL("runCalculations"),self.plot_multiple_files)
         self.connect(self.settingsWidget,QtCore.SIGNAL("settingsUpdatedSignal"),self.apply_settings)
         
         
     def apply_settings(self,settings):
         self.settings=settings
-        self.show_graph(self.data,self.settings,self.name)
+        self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
     
     def set_data(self,data,name):
         self.data=data
         self.name=name
-        self.show_graph(self.data,self.settings,name)
+        self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
         
 #'QD'
 #'QA'
@@ -163,6 +163,8 @@ class MainWindow(QtGui.QMainWindow):
         cy3_hist=np.histogram(cy3_int,x,normed=True)[0]
         cy5_hist=np.histogram(cy5_int,x,normed=True)[0]
         x_axis=x[:-1]
+        rawframe=np.vstack((x_axis,cy3_hist,cy5_hist)).T
+        np.savetxt('data.txt',rawframe,header="#MHz Cy3 Cy5",fmt='%.3f',)
         m, sd1, = [5, 1]
         p = [m, sd1] # Initial guesses for leastsq
         
@@ -255,46 +257,14 @@ class MainWindow(QtGui.QMainWindow):
         return cy3_bgrnd,cy3_thld,cy5_bgrnd,cy5_thld
 
 
-    
-    def show_graph(self,data,settings,name):
-        cy3_bgnd,donor_thld,cy5_bgnd,acceptor_thld=self.plot_raw(data,settings)
-        time=data.time
-        cy3=data.donor
-        cy5=data.acceptor
-        FG=cy3 - cy3_bgnd #np.average(cy3) 
-        FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
-        if settings['threshLogic']=='AND':
-            select = (FG >= donor_thld) & (FR >= acceptor_thld)
-        elif settings['threshLogic']=='OR':
-            select = (FG >= donor_thld) | (FR >= acceptor_thld)
-        elif settings['threshLogic']=='SUM':
-            select = (FG + FR > donor_thld)
-            
-        selectU = (FG < settings['UTD']) & (FR < settings['UTA'])
-        select= select & selectU
-        #select = find_peaks_cwt(FG,np.arange(1,4)) and find_peaks_cwt(FR,np.arange(1,4))
-        
-        
-        #select = (FG > settings['TD']) & (FR > settings['TA'])
-        FG=FG[select]
-        print FG.size
-        FR=FR[select]
-        donor_cross= settings['aAD']*FG
-        acceptor_cross=settings['aDA']*FR
-        FG=FG-donor_cross
-        FR=FR-acceptor_cross
-        gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
-        E=FR/(FR+gamma*FG)
-        
-        
-        result=np.histogram(E,np.linspace(-0.2, 1.2, num=settings['histBins']),normed=True)     
+    def plot_single_file(self,(result,settings,name,E)):
         self.figure.clf()
         ax = self.figure.add_subplot(111)
 #        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
         axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
         ax.plot(axis,result[0],linewidth=3, label='Eff')
-        
-        if settings['nGausFit']!=0:
+
+        if (settings['nGausFit']!=0):
             ms, cs , ws = fit_mixture(E.reshape(E.size,1),settings['nGausFit'])
             gaus=np.zeros((settings['nGausFit'],axis.size))
             for i in range(settings['nGausFit']):
@@ -302,74 +272,90 @@ class MainWindow(QtGui.QMainWindow):
                 ax.plot(axis,gaus[i], linewidth=2,
                     label='Fit ' + str(i) +', Pos '+str(np.round(ms[i],2))+', '+str(np.round(ws[i]*100,2))+'%')
             ax.plot(axis,gaus.sum(0), linewidth=2,linestyle='--')
-        
+
         ax.set_title(os.path.basename(name))
         ax.set_ylabel('Amount, %')
         ax.set_xlabel('FRET Eff')
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.1,
                  box.width, box.height * 0.9])
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=5)
-        if settings['nGausFit']==0:
+        #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=5)
+        if (settings['nGausFit']==0):
             table=np.vstack((axis,np.round(result[0],4))).transpose()
             self.tableWidget.buildFromList(np.vstack((['FRET eff.','Amount'],table)),False)
-        else:    
+        else:
             table=np.vstack((axis,np.round(result[0],4),gaus)).transpose()
             header= ['FRET eff.','Amount']
             [header.append('Fitted ' + str(i)) for i in range(settings['nGausFit'])]
             self.tableWidget.buildFromList(np.vstack((header,table)),False)
-        
-        self.canvas.draw()
-        
 
-    
-    def run_calculations(self):
-        '''
-        Running calculation in separate thread
-        '''
-        total_FG=np.array([])
-        total_FR=np.array([])
-        for data in self.fileMenu.getSelectedData():
-            cy3_bgnd,cy3_sigma,cy5_bgnd,cy5_sigma=self.plot_raw(data,self.settings,showplots=False)
-            time=data.time
-            cy3=data.time
-            cy5=data.time
-            FG=cy3 - cy3_bgnd #np.average(cy3) 
-            FR=cy5 - cy5_bgnd # np.average(cy5) - settings['DE']
-            select = (FG > cy3_sigma) | (FR > cy5_sigma)
-            total_FG=np.append(total_FG,FG[select])
-            total_FR=np.append(total_FR,FR[select])
-        settings=self.settings
-        FG=total_FG
-        FR=total_FR
-        donor_cross= settings['aAD']*FG
-        acceptor_cross=settings['aDA']*FR
-        FG=FG-donor_cross
-        FR=FR-acceptor_cross
-        gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
-        E=FR/(FR+gamma*FG)
-        ms, cs , ws = fit_mixture(E.reshape(E.size,1))
-        result=np.histogram(E,np.arange(-0.2,1.25,0.025),normed=True)     
+        self.canvas.draw()
+
+    def plot_multiple_files(self):
         self.figure.clf()
         ax = self.figure.add_subplot(111)
+#        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
+
+        paths=self.fileMenu.getSelectedPaths()
+        datas=self.fileMenu.getSelectedData()
+        names=[os.path.basename(name) for name in paths]
+        result,settings,name,E=self.calculate_single_file(datas[0],self.settings,paths[0],plotRaw=False)
         axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
-        ax.plot(axis,result[0],linewidth=3, label='Eff')
-        gaus1=ws[0]*mlab.normpdf(axis,ms[0],cs[0])
-        gaus2=ws[1]*mlab.normpdf(axis,ms[1],cs[1])
-        ax.plot(axis,gaus1, linewidth=2,
-            label='Fit 1, Pos '+str(np.round(ms[0],2))+', '+str(np.round(ws[0]*100,2))+'%')
-        ax.plot(axis,gaus2, linewidth=2,
-            label='Fit 2, Pos '+str(np.round(ms[1],2))+', '+str(np.round(ws[1]*100,2))+'%')
-        ax.plot(axis,gaus1+gaus2, linewidth=2,linestyle='--')
-        ax.set_title('Built from selected')
+        ax.plot(axis,result[0],linewidth=3, label=names[0])
+        table=np.vstack((axis,np.round(result[0],4)))
+        for i in xrange(1,len(paths)):
+            result,settings,name,E=self.calculate_single_file(datas[i],self.settings,paths[i],plotRaw=False)
+            axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
+            ax.plot(axis,result[0],linewidth=3, label=names[i])
+            table=np.vstack((table,np.round(result[0],4)))
+
+
+        ax.set_title('Superimposer plots')
         ax.set_ylabel('Amount, %')
         ax.set_xlabel('FRET Eff')
         box = ax.get_position()
         ax.set_position([box.x0, box.y0 + box.height * 0.1,
                  box.width, box.height * 0.9])
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=5)
-
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=3)
+        self.tableWidget.buildFromList(np.vstack((np.hstack((['FRET eff.'],names)),table.transpose())),False)
         self.canvas.draw()
+
+    def calculate_single_file(self,data,settings,name,plotRaw=True):
+        
+        donor_bgnd,donor_thld,acceptor_bgnd,acceptor_thld=self.plot_raw(data,settings,showplots=plotRaw)
+        time=data.time
+        DonorFlux=data.donor #np.average(cy3)
+        AcceptorFlux=data.acceptor # np.average(cy5) - settings['DE']
+
+        if settings['threshLogic']=='AND':
+            select = (DonorFlux >= donor_thld) & (AcceptorFlux >= acceptor_thld)
+        elif settings['threshLogic']=='OR':
+            select = (DonorFlux >= donor_thld) | (AcceptorFlux >= acceptor_thld)
+        elif settings['threshLogic']=='SUM':
+            select = ((DonorFlux + AcceptorFlux) > donor_thld)
+            
+        mask = (DonorFlux < settings['UTD']) & (AcceptorFlux < settings['UTA']) & select
+        #select = find_peaks_cwt(DonorFlux,np.arange(1,4)) and find_peaks_cwt(AcceptorFlux,np.arange(1,4))
+        
+        
+        #select = (DonorFlux > settings['TD']) & (AcceptorFlux > settings['TA'])
+        DonorFlux=DonorFlux[mask] - donor_bgnd
+        AcceptorFlux=AcceptorFlux[mask] - acceptor_bgnd
+        print AcceptorFlux.size
+        donor_cross= settings['aDA']*DonorFlux
+        acceptor_cross=settings['aAD']*AcceptorFlux
+        DonorFlux=DonorFlux-acceptor_cross
+        AcceptorFlux=AcceptorFlux-donor_cross
+        gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
+        E=AcceptorFlux/(AcceptorFlux+gamma*DonorFlux)
+        print 'saving '+  name[:-4]+'_Eff.txt'
+        np.savetxt(name[:-4]+'_Eff.txt',E,fmt='%.6f')
+        
+        
+        result=np.histogram(E,np.linspace(-0.2, 1.2, num=settings['histBins']),normed=True)
+        return result,settings,name,E
+
+
         
     def update_table(self,dictionary):
         self.tableWidget.buildFromDict(dictionary)

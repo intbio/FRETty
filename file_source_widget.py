@@ -22,6 +22,7 @@ class FileSourceWidget(QtGui.QWidget):
     '''
     def __init__(self,workdir,parent=None):
         super(FileSourceWidget, self).__init__(parent)
+        self.setAcceptDrops(True)
         self.parent=parent
         self.filters="Image Files (*.txt)"
         self.fileList=QtCore.QStringList()
@@ -43,7 +44,7 @@ class FileSourceWidget(QtGui.QWidget):
         removeFiles.clicked.connect(self.removeSelected)
         
         calcSelected = QtGui.QPushButton("Calc selected")
-        calcSelected.hide()
+        #calcSelected.hide()
         calcSelected.clicked.connect(self.calcSelected)
         
 
@@ -70,7 +71,7 @@ class FileSourceWidget(QtGui.QWidget):
             self.fileList.removeDuplicates()
             self.fileList.sort()
             print [unicode(self.fileList[i]) for i in range(len(self.fileList))]
-            self.rebuildFileWidgetList() 
+            self.rebuildFileWidgetList()
     
     def rebuildFileWidgetList(self):
         [self.fileWidgetList[i].setParent(None) for i in reversed(range(len(self.fileWidgetList)))]
@@ -78,7 +79,33 @@ class FileSourceWidget(QtGui.QWidget):
         [self.folderLayout.addWidget(self.fileWidgetList[i]) for i in range(len(self.fileWidgetList))]
         for i in range(len(self.fileWidgetList)):
             self.connect(self.fileWidgetList[i],QtCore.SIGNAL("updateFilePreview"),self.sendUpdateSignal)
-    
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.accept()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.setDropAction(QtCore.Qt.CopyAction)
+            event.accept()
+        else:
+            event.ignore()
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls:
+            event.setDropAction(QtCore.Qt.CopyAction)
+            event.accept()
+            links = []
+            for url in event.mimeData().urls():
+                self.fileList.append(unicode(url.toLocalFile()))
+            self.fileList.removeDuplicates()
+            self.fileList.sort()
+            print [unicode(self.fileList[i]) for i in range(len(self.fileList))]
+            self.rebuildFileWidgetList()
+#            self.emit(QtCore.SIGNAL("dropped"), links)
+        else:
+            event.ignore()
     def removeSelected(self):
         for i in reversed(range(len(self.fileWidgetList))):
             if self.fileWidgetList[i].checkState.isChecked():
