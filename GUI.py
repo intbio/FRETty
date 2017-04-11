@@ -327,6 +327,8 @@ class MainWindow(QtGui.QMainWindow):
         DonorFlux=data.donor #np.average(cy3)
         AcceptorFlux=data.acceptor # np.average(cy5) - settings['DE']
 
+
+
         if settings['threshLogic']=='AND':
             select = (DonorFlux >= donor_thld) & (AcceptorFlux >= acceptor_thld)
         elif settings['threshLogic']=='OR':
@@ -334,13 +336,30 @@ class MainWindow(QtGui.QMainWindow):
         elif settings['threshLogic']=='SUM':
             select = ((DonorFlux + AcceptorFlux) > donor_thld)
             
+        
+        
         mask = (DonorFlux < settings['UTD']) & (AcceptorFlux < settings['UTA']) & select
         #select = find_peaks_cwt(DonorFlux,np.arange(1,4)) and find_peaks_cwt(AcceptorFlux,np.arange(1,4))
         
         
+        #filterring complexes
+        tempflux=np.zeros(DonorFlux.size)
+        tempflux[mask]=1
+        pos,length=count_adjacent_true(tempflux>0)
+        stops=pos+length
+        pauses=pos[1:]-stops[:-1]
+        
+        print (pauses<20).sum()
+        print (length>5).sum()
+                
         #select = (DonorFlux > settings['TD']) & (AcceptorFlux > settings['TA'])
         DonorFlux=DonorFlux[mask] - donor_bgnd
         AcceptorFlux=AcceptorFlux[mask] - acceptor_bgnd
+
+
+
+        
+        
         print AcceptorFlux.size
         donor_cross= settings['aDA']*DonorFlux
         acceptor_cross=settings['aAD']*AcceptorFlux
@@ -383,6 +402,17 @@ class Calculator(QtCore.QObject):
         dictionary={'result':{'Value':str(status)}}
         self.signal_update_table.emit(dictionary)
         self.finished.emit()
+
+def count_adjacent_true(arr):
+    assert len(arr.shape) == 1
+    assert arr.dtype == np.bool
+    if arr.size == 0:
+        return np.empty(0, dtype=int), np.empty(0, dtype=int)
+    sw = np.insert(arr[1:] ^ arr[:-1], [0, arr.shape[0]-1], values=True)
+    swi = np.arange(sw.shape[0])[sw]
+    offset = 0 if arr[0] else 1
+    lengths = swi[offset+1::2] - swi[offset:-1:2]
+    return swi[offset:-1:2], lengths
 
 def norm(x, mean, sd):
   norm = []
