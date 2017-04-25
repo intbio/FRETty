@@ -16,6 +16,11 @@ import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+class QHLine(QtGui.QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QtGui.QFrame.HLine)
+        self.setFrameShadow(QtGui.QFrame.Sunken)
 
 class SettingsWidget(QtGui.QWidget):
     def __init__(self,workdir,parent=None):
@@ -229,29 +234,52 @@ class SettingsWidget(QtGui.QWidget):
         self.NA.setValue(5000)
         self.NA.valueChanged.connect(self.collectSettings)
         mainLayout.addWidget(self.NA,12,3,1,1)    
+
+###################### FIltering METHODS ############################
+        mainLayout.addWidget(QHLine(),13,0,1,1)
+        mainLayout.addWidget(QHLine(),13,1,1,1)
+        mainLayout.addWidget(QHLine(),13,2,1,1)
+        mainLayout.addWidget(QHLine(),13,3,1,1)
         
         text=QtGui.QLabel(u'D↑thld:')
-        mainLayout.addWidget(text,13,0,1,1)
+        tooltip=u'Upper threshgold for donor kHz,\n i.e. if signal in donor channel is higher\n the burst is neglected! '
+        text.setToolTip(tooltip)
+        mainLayout.addWidget(text,14,0,1,1)
         self.UTD=QtGui.QDoubleSpinBox(self)
         self.UTD.setRange(0,100000)
         self.UTD.setSingleStep(0.1)
         self.UTD.setValue(50)
         self.UTD.valueChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.UTD,13,1,1,1)
+        self.UTD.setToolTip(tooltip)
+        mainLayout.addWidget(self.UTD,14,1,1,1)
         
         text=QtGui.QLabel(u'A↑thld:')
-        mainLayout.addWidget(text,13,2,1,1)
+        tooltip=u'Upper threshgold for acceptor kHz,\n i.e. if signal in acceptor channel is higher\n the burst is neglected! '
+        text.setToolTip(tooltip)
+        mainLayout.addWidget(text,14,2,1,1)
         self.UTA=QtGui.QDoubleSpinBox(self)
         self.UTA.setRange(0,100000)
         self.UTA.setSingleStep(0.1)
         self.UTA.setValue(50)
         self.UTA.valueChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.UTA,13,3,1,1)        
+        mainLayout.addWidget(self.UTA,14,3,1,1) 
+        
+        text=QtGui.QLabel(u'MaxTime:')
+        tooltip=u'Maximum burst length in time bins,\n i.e. if object was in the focus for\n more than N time bins, burst is neglected! '
+        text.setToolTip(tooltip)
+        mainLayout.addWidget(text,15,0,1,1)
+        self.ASML=QtGui.QDoubleSpinBox(self)
+        self.ASML.setRange(0,100)
+        self.ASML.setSingleStep(1)
+        self.ASML.setValue(5)
+        self.ASML.valueChanged.connect(self.collectSettings)
+        self.ASML.setToolTip(tooltip)
+        mainLayout.addWidget(self.ASML,15,1,1,1)       
 
 ###################### FITTING METHODS ############################   
 
         text=QtGui.QLabel('Gauss fitting:')
-        mainLayout.addWidget(text,14,0,1,2)
+        mainLayout.addWidget(text,16,0,1,2)
         self.gausFitting=QtGui.QComboBox(self)
         self.gausFitting.addItem('None')
         self.gausFitting.addItem('1')
@@ -261,14 +289,14 @@ class SettingsWidget(QtGui.QWidget):
         self.gausFitting.addItem('5')
         self.gausFitting.setCurrentIndex(0)        
         self.gausFitting.currentIndexChanged.connect(self.collectSettings)
-        mainLayout.addWidget(self.gausFitting,14,2,1,2) 
+        mainLayout.addWidget(self.gausFitting,16,2,1,2) 
         
 ###################### FORMULAS ############################  
 
         windowColor = str(self.palette().color(QtGui.QPalette.Window).name())    
         self.figure = plt.figure(facecolor=windowColor)
         self.canvas = FigureCanvas(self.figure)
-        mainLayout.addWidget(self.canvas,15,0,1,4)
+        mainLayout.addWidget(self.canvas,17,0,1,4)
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
         self.drawFormulas()
         
@@ -366,6 +394,7 @@ class SettingsWidget(QtGui.QWidget):
         'aDA':self.aDA.value(),
         'UTD':self.UTD.value(),
         'UTA':self.UTA.value(),
+        'AggSearchMaxLength':self.ASML.value(),
         'histBins':self.histBins.value(),
         'threshMethod':self.ThresholdMethod.currentText(),
         'threshLogic':self.ThresholdLogic.currentText(),

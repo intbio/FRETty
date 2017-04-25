@@ -70,12 +70,24 @@ class FileSourceWidget(QtGui.QWidget):
                 self.fileList.append(unicode(qstringlist[i]))
             self.fileList.removeDuplicates()
             self.fileList.sort()
-            print [unicode(self.fileList[i]) for i in range(len(self.fileList))]
             self.rebuildFileWidgetList()
     
     def rebuildFileWidgetList(self):
-        [self.fileWidgetList[i].setParent(None) for i in reversed(range(len(self.fileWidgetList)))]
-        self.fileWidgetList= [fileIconWidget(unicode(self.fileList[i])) for i in range(len(self.fileList))]
+        for i in range(len(self.fileList)):
+            self.emit(QtCore.SIGNAL("updateUI"))
+            try:
+                for widget in self.fileWidgetList:
+                    if widget.path == self.fileList[i]:
+                        raise ValueError('duplicate')
+                try:
+                    self.fileWidgetList.append(fileIconWidget(unicode(self.fileList[i])))
+                    print "<font color=#00FF00>'%s' loaded.</font>" % os.path.basename(unicode(self.fileList[i]))
+                except:
+                    print "<font color=#FF0000>'%s' file is broken! Skipped</font>" % self.fileList[i]
+                    self.fileList.removeAt(i)
+            except ValueError:
+                pass
+
         [self.folderLayout.addWidget(self.fileWidgetList[i]) for i in range(len(self.fileWidgetList))]
         for i in range(len(self.fileWidgetList)):
             self.connect(self.fileWidgetList[i],QtCore.SIGNAL("updateFilePreview"),self.sendUpdateSignal)
@@ -101,16 +113,17 @@ class FileSourceWidget(QtGui.QWidget):
                 self.fileList.append(unicode(url.toLocalFile()))
             self.fileList.removeDuplicates()
             self.fileList.sort()
-            print [unicode(self.fileList[i]) for i in range(len(self.fileList))]
             self.rebuildFileWidgetList()
 #            self.emit(QtCore.SIGNAL("dropped"), links)
         else:
             event.ignore()
+            
     def removeSelected(self):
         for i in reversed(range(len(self.fileWidgetList))):
             if self.fileWidgetList[i].checkState.isChecked():
-                self.fileList.removeAt(i)
                 self.fileWidgetList[i].setParent(None) 
+                self.fileWidgetList.pop(i)
+                self.fileList.removeAt(i)
 
                 
     def getSelectedPaths(self):

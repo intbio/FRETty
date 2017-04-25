@@ -64,6 +64,7 @@ class MainWindow(QtGui.QMainWindow):
         tabsAndSettingsLayout=QtGui.QHBoxLayout(tabsAndSettingsWidget)
         
         tabs = QtGui.QTabWidget(self)
+        
     
         images=QtGui.QWidget(self)
         highlightColot = str('white')#tabs.palette().color(QtGui.QPalette.HighlightedText).name())
@@ -91,7 +92,30 @@ class MainWindow(QtGui.QMainWindow):
         tabs.addTab(results,"Results")
         self.tableWidget=TableWidget(self)
         resultsLayout.addWidget(self.tableWidget)
-        tabsAndSettingsLayout.addWidget(tabs)
+        
+        self.logText = QtGui.QTextEdit()
+        self.logText.setMaximumHeight(130)
+        self.logText.setReadOnly(True)
+        self.logText.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.logText.append("Welcome to Fretty 1.1! ")
+        self.logger = Logger(self.logText)
+        #self.errors = Logger(self.logText)
+        sys.stdout = self.logger        
+        
+        tabs_and_logger_widget=QtGui.QWidget(self)
+        tabs_and_logger_layout=QtGui.QVBoxLayout(tabs_and_logger_widget)
+        tabs_and_logger_layout.addWidget(tabs)
+        tabs_and_logger_layout.addWidget(self.logText)
+        
+
+        
+        tabsAndSettingsLayout.addWidget(tabs_and_logger_widget)
+        
+        
+        
+        
+        
+        
         
         
         self.settingsWidget=SettingsWidget(self)
@@ -111,6 +135,7 @@ class MainWindow(QtGui.QMainWindow):
         Assigning connections
         '''
         self.connect(self.fileMenu,QtCore.SIGNAL("updateFilePreview"),self.set_data)
+        self.connect(self.fileMenu,QtCore.SIGNAL("updateUI"),self.repaint)
         self.connect(self.fileMenu,QtCore.SIGNAL("runCalculations"),self.plot_multiple_files)
         self.connect(self.settingsWidget,QtCore.SIGNAL("settingsUpdatedSignal"),self.apply_settings)
         
@@ -341,34 +366,44 @@ class MainWindow(QtGui.QMainWindow):
         mask = (DonorFlux < settings['UTD']) & (AcceptorFlux < settings['UTA']) & select
         #select = find_peaks_cwt(DonorFlux,np.arange(1,4)) and find_peaks_cwt(AcceptorFlux,np.arange(1,4))
         
-        
+       
         #filterring complexes
-        tempflux=np.zeros(DonorFlux.size)
-        tempflux[mask]=1
-        pos,length=count_adjacent_true(tempflux>0)
+        complex_filter=mask
+        pos,length=count_adjacent_true(complex_filter>0)
+        ident=(40-len(os.path.basename(name)))/2
+        print "<pre>%s %s %s</pre>" %("-"*ident, os.path.basename(name),"-"*ident)
+        print "Amount of events before filtering is %d"%pos.size
+        
         stops=pos+length
         pauses=pos[1:]-stops[:-1]
         
-        print (pauses<20).sum()
-        print (length>5).sum()
+        agg_search_max_length=settings['AggSearchMaxLength']
+        print "Amount of aggregates is %d"%(length > agg_search_max_length).sum()
+        
+        lengthsmMask=length > agg_search_max_length
+        pos=pos[lengthsmMask]
+        length=length[lengthsmMask]
+        for burstpos,purstlength in zip(pos,length):
+            complex_filter[burstpos:burstpos+purstlength]=0
+        
+        mask=complex_filter.astype(bool)
+        print "Amount of events after filtering is %d"%count_adjacent_true(mask)[0].size
                 
         #select = (DonorFlux > settings['TD']) & (AcceptorFlux > settings['TA'])
         DonorFlux=DonorFlux[mask] - donor_bgnd
         AcceptorFlux=AcceptorFlux[mask] - acceptor_bgnd
-
-
-
         
         
-        print AcceptorFlux.size
+        print "Amount of bins after filtering is %d"%AcceptorFlux.size
+        
         donor_cross= settings['aDA']*DonorFlux
         acceptor_cross=settings['aAD']*AcceptorFlux
         DonorFlux=DonorFlux-acceptor_cross
         AcceptorFlux=AcceptorFlux-donor_cross
         gamma=(float(settings['QA'])*settings['kA'])/(float(settings['QD'])*settings['kD'])
         E=AcceptorFlux/(AcceptorFlux+gamma*DonorFlux)
-        print 'saving '+  name[:-4]+'_Eff.txt'
-        np.savetxt(name[:-4]+'_Eff.txt',E,fmt='%.6f')
+        #print 'saving '+  name[:-4]+'_Eff.txt'
+        #np.savetxt(name[:-4]+'_Eff.txt',E,fmt='%.6f')
         
         
         result=np.histogram(E,np.linspace(-0.2, 1.2, num=settings['histBins']),normed=True)
@@ -381,6 +416,15 @@ class MainWindow(QtGui.QMainWindow):
         
     def updateProgressBar(self,value):
         self.pbar.setValue(value)
+
+class Logger(object):
+    def __init__(self, output):
+        self.output = output
+
+    def write(self, string):
+        if not (string == "\n" ):
+            trstring = QtGui.QApplication.translate("MainWindow", string.rstrip(), None, QtGui.QApplication.UnicodeUTF8)
+            self.output.append(trstring)
         
 class Calculator(QtCore.QObject): 
     signal_update_table = QtCore.pyqtSignal(dict) 
