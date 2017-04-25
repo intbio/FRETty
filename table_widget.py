@@ -61,7 +61,16 @@ class TableWidget(QtGui.QTableWidget):
             it.iternext()
                       
         self.verticalHeader().setDefaultSectionSize(self.verticalHeader().minimumSectionSize())
-           
+    
+    def addFromList(self,inList,addHeaders=True):
+        numCols=self.columnCount()
+        for col in inList[:,0]:
+            self.insertColumn(numCols)
+        it = np.nditer(inList, flags=['multi_index'])
+        while not it.finished:
+            self.setItem(it.multi_index[1],it.multi_index[0]+numCols,QtGui.QTableWidgetItem(str(it[0])))
+            it.iternext()
+            
     def keyPressEvent(self, e):
         if (e.modifiers() & QtCore.Qt.ControlModifier):        
             if e.key() == QtCore.Qt.Key_C:
