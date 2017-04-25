@@ -313,7 +313,9 @@ class MainWindow(QtGui.QMainWindow):
             header= ['FRET eff.','Amount']
             [header.append('Fitted ' + str(i)) for i in range(settings['nGausFit'])]
             self.tableWidget.buildFromList(np.vstack((header,table)),False)
-
+        self.tableWidget.addFromList(np.array([[' ']]))   
+        self.tableWidget.addFromList(np.hstack(([['Settings'],['']],np.array([settings.keys(),[str(qstring) for qstring in settings.values()]]))))
+        #print np.array([settings.keys(),[str(qstring) for qstring in settings.values()]])
         self.canvas.draw()
 
     def plot_multiple_files(self):
@@ -343,6 +345,10 @@ class MainWindow(QtGui.QMainWindow):
                  box.width, box.height * 0.9])
         ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=3)
         self.tableWidget.buildFromList(np.vstack((np.hstack((['FRET eff.'],names)),table.transpose())),False)
+        self.tableWidget.addFromList(np.array([[' ']]))   
+        self.tableWidget.addFromList(np.hstack(([['Settings'],['']],np.array([settings.keys(),[str(qstring) for qstring in settings.values()]]))))
+        #print np.array([settings.keys(),[str(qstring) for qstring in settings.values()]])
+        self.canvas.draw()
         self.canvas.draw()
 
     def calculate_single_file(self,data,settings,name,plotRaw=True):
