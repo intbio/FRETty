@@ -65,6 +65,9 @@ class MainWindow(QtGui.QMainWindow):
         
         tabs = QtGui.QTabWidget(self)
         
+        #### NOT THE BEST WAY TO IMPLEMENT THAT!
+        self.lastCalcMultiple=False
+        
     
         images=QtGui.QWidget(self)
         highlightColot = str('white')#tabs.palette().color(QtGui.QPalette.HighlightedText).name())
@@ -142,35 +145,26 @@ class MainWindow(QtGui.QMainWindow):
         
     def apply_settings(self,settings):
         self.settings=settings
-        self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
+        if self.lastCalcMultiple:
+            try:
+                self.plot_multiple_files()
+            except IndexError:
+                print "<font color=#FF0000>No files loaded.</font>"
+        else:
+            try:
+                self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
+            except AttributeError:
+                try:
+                    self.plot_multiple_files()
+                except IndexError:
+                    print "<font color=#FF0000>No files loaded.</font>"
     
     def set_data(self,data,name):
         self.data=data
         self.name=name
         self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
+        self.lastCalcMultiple=False
         
-#'QD'
-#'QA'
-#'kD'
-#'kA'
-#'BD'
-#'BA'
-#'CD'
-#'CA'
-#'TD'
-#'TA'
-#'ND'
-#'NA'
-#'DE'
-#'UTD'
-#'UTA'
-#'aAD'
-#'aDA'
-#'histBins'
-#'threshMethod''Auto (gauss)''Manual thresholds''Select top events'
-#'threshLogic' 'OR' 'AND' 'SUM'
-#'backgrMetod 'Auto (gauss)' 'Manual'
-#'nGausFit'
 
        
     def plot_raw(self,data,settings,showplots=True):
@@ -291,6 +285,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if (settings['nGausFit']!=0):
             ms, cs , ws = fit_mixture(E.reshape(E.size,1),settings['nGausFit'])
+            
             gaus=np.zeros((settings['nGausFit'],axis.size))
             for i in range(settings['nGausFit']):
                 gaus[i]=ws[i]*mlab.normpdf(axis,ms[i],cs[i])
@@ -309,47 +304,66 @@ class MainWindow(QtGui.QMainWindow):
             table=np.vstack((axis,np.round(result[0],4))).transpose()
             self.tableWidget.buildFromList(np.vstack((['FRET eff.','Amount'],table)),False)
         else:
-            table=np.vstack((axis,np.round(result[0],4),gaus)).transpose()
+            table=np.vstack((axis,np.round(result[0],4),gaus,gaus.sum(0))).transpose()
             header= ['FRET eff.','Amount']
-            [header.append('Fitted ' + str(i)) for i in range(settings['nGausFit'])]
+            [header.append('Fitted ' + str(i)) for i in range(1,settings['nGausFit']+1)]
+            header.append('Fitted Sum')
             self.tableWidget.buildFromList(np.vstack((header,table)),False)
+            self.tableWidget.addFromList(np.array([[' ']]))
+            gausses= np.array([np.array(ms),np.array(cs).flatten(),np.array(ws)]).T
+            gausses[:,2]*=100
+            gausses=np.hstack(( np.transpose([np.arange(1,gausses.shape[0]+1)]),gausses ))
+
+            self.tableWidget.addFromList(np.vstack( ([['#','Position','Sigma','Area, %']],gausses) ).T)
+            
+
         self.tableWidget.addFromList(np.array([[' ']]))   
         self.tableWidget.addFromList(np.hstack(([['Settings'],['']],np.array([settings.keys(),[str(qstring) for qstring in settings.values()]]))))
         #print np.array([settings.keys(),[str(qstring) for qstring in settings.values()]])
         self.canvas.draw()
 
     def plot_multiple_files(self):
-        self.figure.clf()
-        ax = self.figure.add_subplot(111)
-#        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
+        if len(self.fileMenu.getSelectedPaths()) != 0:
+            if len(self.fileMenu.getSelectedPaths()) == 1:
+                self.lastCalcMultiple=False
+                self.data=self.fileMenu.getSelectedData()[0]
+                self.name=self.fileMenu.getSelectedPaths()[0]
+                self.plot_single_file(self.calculate_single_file(self.data,self.settings,self.name))
+            else:
+                self.lastCalcMultiple=True
+                self.figure.clf()
+                ax = self.figure.add_subplot(111)
+        #        result=np.histogram(fret.proximity_ratio(gamma=gamma),np.arange(0,1.05,0.05),normed=True)
 
-        paths=self.fileMenu.getSelectedPaths()
-        datas=self.fileMenu.getSelectedData()
-        names=[os.path.basename(name) for name in paths]
-        result,settings,name,E=self.calculate_single_file(datas[0],self.settings,paths[0],plotRaw=False)
-        axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
-        ax.plot(axis,result[0],linewidth=3, label=names[0])
-        table=np.vstack((axis,np.round(result[0],4)))
-        for i in xrange(1,len(paths)):
-            result,settings,name,E=self.calculate_single_file(datas[i],self.settings,paths[i],plotRaw=False)
-            axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
-            ax.plot(axis,result[0],linewidth=3, label=names[i])
-            table=np.vstack((table,np.round(result[0],4)))
+                paths=self.fileMenu.getSelectedPaths()
+                datas=self.fileMenu.getSelectedData()
+                names=[os.path.basename(name) for name in paths]
+                result,settings,name,E=self.calculate_single_file(datas[0],self.settings,paths[0],plotRaw=False)
+                axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
+                ax.plot(axis,result[0],linewidth=3, label=names[0])
+                table=np.vstack((axis,np.round(result[0],4)))
+                for i in xrange(1,len(paths)):
+                    result,settings,name,E=self.calculate_single_file(datas[i],self.settings,paths[i],plotRaw=False)
+                    axis=result[1][:-1]+(result[1][1]-result[1][0])/2.0
+                    ax.plot(axis,result[0],linewidth=3, label=names[i])
+                    table=np.vstack((table,np.round(result[0],4)))
 
 
-        ax.set_title('Superimposer plots')
-        ax.set_ylabel('Amount, %')
-        ax.set_xlabel('FRET Eff')
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                 box.width, box.height * 0.9])
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=3)
-        self.tableWidget.buildFromList(np.vstack((np.hstack((['FRET eff.'],names)),table.transpose())),False)
-        self.tableWidget.addFromList(np.array([[' ']]))   
-        self.tableWidget.addFromList(np.hstack(([['Settings'],['']],np.array([settings.keys(),[str(qstring) for qstring in settings.values()]]))))
-        #print np.array([settings.keys(),[str(qstring) for qstring in settings.values()]])
-        self.canvas.draw()
-        self.canvas.draw()
+                ax.set_title('Superimposer plots')
+                ax.set_ylabel('Amount, %')
+                ax.set_xlabel('FRET Eff')
+                box = ax.get_position()
+                ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                         box.width, box.height * 0.9])
+                ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1),ncol=3)
+                self.tableWidget.buildFromList(np.vstack((np.hstack((['FRET eff.'],names)),table.transpose())),False)
+                self.tableWidget.addFromList(np.array([[' ']]))   
+                self.tableWidget.addFromList(np.hstack(([['Settings'],['']],np.array([settings.keys(),[str(qstring) for qstring in settings.values()]]))))
+                #print np.array([settings.keys(),[str(qstring) for qstring in settings.values()]])
+                self.canvas.draw()
+                self.canvas.draw()
+        else:
+            print "<font color=#FF0000>No files loaded.</font>"
 
     def calculate_single_file(self,data,settings,name,plotRaw=True):
         
@@ -486,7 +500,7 @@ def main():
     sys.exit(app.exec_())
 
 def fit_mixture(data, ncomp=2, doplot=False):
-    clf = mixture.GMM(n_components=ncomp)#,covariance_type='full')
+    clf = mixture.GMM(n_components=ncomp,thresh=0.001)#,covariance_type='full')
     clf.fit(data)
     ml = clf.means_    
     cl = clf.covars_
@@ -494,11 +508,10 @@ def fit_mixture(data, ncomp=2, doplot=False):
     ms = [m[0] for m in ml]
     cs = [np.sqrt(c) for c in cl]
     ws = [w for w in wl]
-    #s=sorted(zip(ml,cs,ws))
-    #ml=[e[0] for e in s]
-    #cs=[e[1] for e in s]
-    #ws=[e[2] for e in s]
-    return ms, cs, ws
+    
+    gausses= np.array([np.array(ms),np.array(cs).flatten(),np.array(ws)]).T
+    gausses.sort(axis=0)
+    return gausses.T[0], gausses.T[1], gausses.T[2]
 
 if __name__ == '__main__':
     main()    

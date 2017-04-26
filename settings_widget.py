@@ -37,7 +37,7 @@ class SettingsWidget(QtGui.QWidget):
         self.QD.setRange(0,1)
         self.QD.setSingleStep(0.01)
         self.QD.setValue(1)
-        self.QD.valueChanged.connect(self.collectSettings)
+        self.QD.editingFinished.connect(self.collectSettings)
         self.QD.setToolTip(tooltip)
         mainLayout.addWidget(self.QD,0,1)
         
@@ -49,7 +49,7 @@ class SettingsWidget(QtGui.QWidget):
         self.QA.setRange(0,1)
         self.QA.setSingleStep(0.01)
         self.QA.setValue(1)
-        self.QA.valueChanged.connect(self.collectSettings)
+        self.QA.editingFinished.connect(self.collectSettings)
         self.QA.setToolTip(tooltip)
         mainLayout.addWidget(self.QA,0,3)
         
@@ -61,7 +61,7 @@ class SettingsWidget(QtGui.QWidget):
         self.kD.setRange(0,1)
         self.kD.setSingleStep(0.01)
         self.kD.setValue(1.00)
-        self.kD.valueChanged.connect(self.collectSettings)
+        self.kD.editingFinished.connect(self.collectSettings)
         self.kD.setToolTip(tooltip)
         mainLayout.addWidget(self.kD)
 
@@ -73,7 +73,7 @@ class SettingsWidget(QtGui.QWidget):
         self.kA.setRange(0,1)
         self.kA.setSingleStep(0.01)
         self.kA.setValue(1)
-        self.kA.valueChanged.connect(self.collectSettings)
+        self.kA.editingFinished.connect(self.collectSettings)
         self.kA.setToolTip(tooltip)
         mainLayout.addWidget(self.kA)
         
@@ -85,7 +85,7 @@ class SettingsWidget(QtGui.QWidget):
         self.aAD.setRange(0,1)
         self.aAD.setSingleStep(0.01)
         self.aAD.setValue(0.00)
-        self.aAD.valueChanged.connect(self.collectSettings)
+        self.aAD.editingFinished.connect(self.collectSettings)
         self.aAD.setToolTip(tooltip)
         mainLayout.addWidget(self.aAD)
         
@@ -97,7 +97,7 @@ class SettingsWidget(QtGui.QWidget):
         self.aDA.setRange(0,1)
         self.aDA.setSingleStep(0.01)
         self.aDA.setValue(0.19)
-        self.aDA.valueChanged.connect(self.collectSettings)
+        self.aDA.editingFinished.connect(self.collectSettings)
         self.aDA.setToolTip(tooltip)
         mainLayout.addWidget(self.aDA)        
                        
@@ -110,7 +110,7 @@ class SettingsWidget(QtGui.QWidget):
         self.DE.setRange(0,1000)
         self.DE.setSingleStep(0.01)
         self.DE.setValue(0)
-        self.DE.valueChanged.connect(self.collectSettings)
+        self.DE.editingFinished.connect(self.collectSettings)
         self.DE.setToolTip(tooltip)        
         mainLayout.addWidget(self.DE)
         
@@ -122,7 +122,7 @@ class SettingsWidget(QtGui.QWidget):
         self.histBins.setRange(0,1000)
         self.histBins.setSingleStep(1)
         self.histBins.setValue(50)
-        self.histBins.valueChanged.connect(self.collectSettings)
+        self.histBins.editingFinished.connect(self.collectSettings)
         self.histBins.setToolTip(tooltip)        
         mainLayout.addWidget(self.histBins)
         
@@ -144,7 +144,7 @@ class SettingsWidget(QtGui.QWidget):
         self.BD.setRange(0,1000)
         self.BD.setSingleStep(0.1)
         self.BD.setValue(9)
-        self.BD.valueChanged.connect(self.collectSettings)
+        self.BD.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.BD,7,1,1,1)
         
         self.BAtext=QtGui.QLabel('Ba:')
@@ -153,7 +153,7 @@ class SettingsWidget(QtGui.QWidget):
         self.BA.setRange(0,1000)
         self.BA.setSingleStep(0.1)
         self.BA.setValue(9)
-        self.BA.valueChanged.connect(self.collectSettings)
+        self.BA.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.BA,7,3,1,1)     
         
 ###################### THRESHOLD METHODS ############################   
@@ -186,7 +186,7 @@ class SettingsWidget(QtGui.QWidget):
         self.CD.setRange(0,1000)
         self.CD.setSingleStep(0.1)
         self.CD.setValue(9)
-        self.CD.valueChanged.connect(self.collectSettings)
+        self.CD.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.CD,10,1,1,1)
         
         self.CAtext=QtGui.QLabel('Coef. A:')
@@ -195,25 +195,25 @@ class SettingsWidget(QtGui.QWidget):
         self.CA.setRange(0,1000)
         self.CA.setSingleStep(0.1)
         self.CA.setValue(9)
-        self.CA.valueChanged.connect(self.collectSettings)
+        self.CA.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.CA,10,3,1,1)
         
         self.TDtext=QtGui.QLabel('Thresh. D:')
         mainLayout.addWidget(self.TDtext,11,0,1,1)
         self.TD=QtGui.QDoubleSpinBox(self)
         self.TD.setRange(0,1000)
-        self.TD.setSingleStep(0.1)
-        self.TD.setValue(9)
-        self.TD.valueChanged.connect(self.collectSettings)
+        self.TD.setSingleStep(1.0)
+        self.TD.setValue(10)
+        self.TD.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.TD,11,1,1,1)
         
         self.TAtext=QtGui.QLabel('Thresh. A:')
         mainLayout.addWidget(self.TAtext,11,2,1,1)
         self.TA=QtGui.QDoubleSpinBox(self)
         self.TA.setRange(0,1000)
-        self.TA.setSingleStep(0.1)
-        self.TA.setValue(9)
-        self.TA.valueChanged.connect(self.collectSettings)
+        self.TA.setSingleStep(1.0)
+        self.TA.setValue(5)
+        self.TA.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.TA,11,3,1,1)       
         
         
@@ -223,7 +223,7 @@ class SettingsWidget(QtGui.QWidget):
         self.ND.setRange(0,100000)
         self.ND.setSingleStep(0.1)
         self.ND.setValue(5000)
-        self.ND.valueChanged.connect(self.collectSettings)
+        self.ND.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.ND,12,1,1,1)
         
         self.NAtext=QtGui.QLabel('Na:')
@@ -232,14 +232,11 @@ class SettingsWidget(QtGui.QWidget):
         self.NA.setRange(0,100000)
         self.NA.setSingleStep(0.1)
         self.NA.setValue(5000)
-        self.NA.valueChanged.connect(self.collectSettings)
+        self.NA.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.NA,12,3,1,1)    
 
 ###################### FIltering METHODS ############################
-        mainLayout.addWidget(QHLine(),13,0,1,1)
-        mainLayout.addWidget(QHLine(),13,1,1,1)
-        mainLayout.addWidget(QHLine(),13,2,1,1)
-        mainLayout.addWidget(QHLine(),13,3,1,1)
+        mainLayout.addWidget(QHLine(),13,0,1,4)
         
         text=QtGui.QLabel(u'D↑thld:')
         tooltip=u'Upper threshgold for donor kHz,\n i.e. if signal in donor channel is higher\n the burst is neglected! '
@@ -249,7 +246,7 @@ class SettingsWidget(QtGui.QWidget):
         self.UTD.setRange(0,100000)
         self.UTD.setSingleStep(0.1)
         self.UTD.setValue(50)
-        self.UTD.valueChanged.connect(self.collectSettings)
+        self.UTD.editingFinished.connect(self.collectSettings)
         self.UTD.setToolTip(tooltip)
         mainLayout.addWidget(self.UTD,14,1,1,1)
         
@@ -261,7 +258,7 @@ class SettingsWidget(QtGui.QWidget):
         self.UTA.setRange(0,100000)
         self.UTA.setSingleStep(0.1)
         self.UTA.setValue(50)
-        self.UTA.valueChanged.connect(self.collectSettings)
+        self.UTA.editingFinished.connect(self.collectSettings)
         mainLayout.addWidget(self.UTA,14,3,1,1) 
         
         text=QtGui.QLabel(u'MaxTime:')
@@ -272,7 +269,7 @@ class SettingsWidget(QtGui.QWidget):
         self.ASML.setRange(0,100)
         self.ASML.setSingleStep(1)
         self.ASML.setValue(5)
-        self.ASML.valueChanged.connect(self.collectSettings)
+        self.ASML.editingFinished.connect(self.collectSettings)
         self.ASML.setToolTip(tooltip)
         mainLayout.addWidget(self.ASML,15,1,1,1)       
 
@@ -299,6 +296,7 @@ class SettingsWidget(QtGui.QWidget):
         mainLayout.addWidget(self.canvas,17,0,1,4)
         mainLayout.setAlignment(QtCore.Qt.AlignTop)
         self.drawFormulas()
+        self.changeHideStatus()
         
     def drawFormulas(self):
         self.figure.clf()
@@ -319,12 +317,16 @@ class SettingsWidget(QtGui.QWidget):
         self.canvas.draw()
 
     def changeHideStatus(self):
-        self.hideAll()
         if self.BackGrSubMethod.currentText()=='Manual':
             self.BAtext.show()
             self.BA.show()
             self.BDtext.show()        
             self.BD.show()
+        elif self.BackGrSubMethod.currentText()=='Auto (gauss)':
+            self.BAtext.hide()
+            self.BA.hide()
+            self.BDtext.hide()        
+            self.BD.hide()
             
         if (self.ThresholdLogic.currentText()=='OR') | (self.ThresholdLogic.currentText()=='AND'):
             self.ThresholdMethod.model().item(2).setEnabled(True)
@@ -333,13 +335,39 @@ class SettingsWidget(QtGui.QWidget):
                 self.CD.show()
                 self.CDtext.show()       
                 self.CA.show()
-                self.CAtext.show()       
+                self.CAtext.show() 
+                self.TD.hide()
+                self.TDtext.hide()
+                self.TA.hide()
+                self.TAtext.hide()       
+                self.ThresholdLogic.model().item(2).setEnabled(True)
+                self.ND.hide()
+                self.NDtext.hide()
+                self.NA.hide()
+                self.NAtext.hide()
             elif self.ThresholdMethod.currentText()=='Manual thresholds':
+                self.CD.hide()
+                self.CDtext.hide()       
+                self.CA.hide()
+                self.CAtext.hide()
                 self.TD.show()
                 self.TDtext.show()
                 self.TA.show()
                 self.TAtext.show()  
+                self.ThresholdLogic.model().item(2).setEnabled(True)
+                self.ND.hide()
+                self.NDtext.hide()
+                self.NA.hide()
+                self.NAtext.hide()
             elif self.ThresholdMethod.currentText()=='Select top events':
+                self.CD.hide()
+                self.CDtext.hide()       
+                self.CA.hide()
+                self.CAtext.hide()
+                self.TD.hide()
+                self.TDtext.hide()
+                self.TA.hide()
+                self.TAtext.hide() 
                 self.ThresholdLogic.model().item(2).setEnabled(False)
                 self.ND.show()
                 self.NDtext.show()
@@ -349,12 +377,21 @@ class SettingsWidget(QtGui.QWidget):
             self.ThresholdMethod.model().item(2).setEnabled(False)
             if self.ThresholdMethod.currentText()=='Select top events':
                 self.ThresholdMethod.setCurrentIndex(0)
+                self.CD.hide()
+                self.CDtext.hide()
+                self.TD.hide()
+                self.TDtext.hide()
             elif self.ThresholdMethod.currentText()=='Auto (gauss)':
                 self.CD.show()
-                self.CDtext.show()       
+                self.CDtext.show()    
+                self.TD.hide()
+                self.TDtext.hide()   
             elif self.ThresholdMethod.currentText()=='Manual thresholds':
                 self.TD.show()
                 self.TDtext.show()
+                self.CD.hide()
+                self.CDtext.hide()
+                
             
     def hideAll(self):
         self.BAtext.hide()
@@ -376,7 +413,7 @@ class SettingsWidget(QtGui.QWidget):
         
     def collectSettings(self):
         self.changeHideStatus()
-        self.drawFormulas()
+        #self.drawFormulas()
         settings={'QD':self.QD.value(),
         'QA':self.QA.value(),
         'kD':self.kD.value(),
