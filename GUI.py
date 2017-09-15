@@ -72,7 +72,7 @@ class MainWindow(QtGui.QMainWindow):
         images=QtGui.QWidget(self)
         highlightColot = str('white')#tabs.palette().color(QtGui.QPalette.HighlightedText).name())
         imagesLayout=QtGui.QVBoxLayout(images)
-        tabs.addTab(images,"Simple spFRET")
+        tabs.addTab(images,"Results")
         
         self.figure = plt.figure(facecolor=highlightColot)
         self.canvas = FigureCanvas(self.figure)
@@ -83,7 +83,7 @@ class MainWindow(QtGui.QMainWindow):
        
         fastFRET=QtGui.QWidget(self)
         fastFRETLayout=QtGui.QVBoxLayout(fastFRET)
-        tabs.addTab(fastFRET,"Raw data")
+        tabs.addTab(fastFRET,"Raw signal")
         self.figure1 = plt.figure(facecolor=highlightColot)
         self.canvas1 = FigureCanvas(self.figure1)
         self.toolbar1 = NavigationToolbar(self.canvas1, self)
@@ -92,7 +92,7 @@ class MainWindow(QtGui.QMainWindow):
         
         results=QtGui.QWidget(self)
         resultsLayout=QtGui.QVBoxLayout(results)
-        tabs.addTab(results,"Results")
+        tabs.addTab(results,"Export")
         self.tableWidget=TableWidget(self)
         resultsLayout.addWidget(self.tableWidget)
         
@@ -225,15 +225,15 @@ class MainWindow(QtGui.QMainWindow):
         if showplots:
             gs = gridspec.GridSpec(2, 2)
             ax00 = self.figure1.add_subplot(gs[0,0])
-            ax00.plot(x_axis, cy3_hist,color='blue', label='Raw')
+            ax00.plot(x_axis, cy3_hist,color='blue', label='Signal')
             #ax00.hist(cy3,np.arange(0,max,1/(timestep*1000)), label='Raw',normed=True)
             ax00.plot(x_axis, cy3_est,color='black', label='Fitted')
             ax00.axvline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=3)
             ax00.axvline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=3)
             #ax00.plot(x_axis,gaus2, linewidth=3)
             ax00.legend()   
-            ax00.set_title('Cy3 hist')
-            ax00.set_ylabel('Amount')
+            ax00.set_title('Donor signal spectra')
+            ax00.set_ylabel('Amount,%')
             ax00.set_xlabel('Count, kHz')
             scale=[cy3_thld+1 if 10*cy3_guess[1]<=cy3_thld else 10*cy3_guess[1]][0]
             ax00.set_xlim(0,np.round(cy3_guess[0]+scale))
@@ -245,29 +245,29 @@ class MainWindow(QtGui.QMainWindow):
             ax01.axvline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=3)
             ax01.axvline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=3)
             ax01.legend() 
-            ax01.set_title('Cy5 hist')
-            ax01.set_ylabel('Amount')
+            ax01.set_title('Acceptor signal spectra')
+            ax01.set_ylabel('Amount,%')
             ax01.set_xlabel('Count, kHz')
             scale=[cy5_thld+1 if 10*cy5_guess[1]<=cy5_thld else 10*cy5_guess[1]][0]
             ax01.set_xlim(0,np.round(cy5_guess[0]+scale))
                     
             ax10 = self.figure1.add_subplot(gs[1,0])
-            ax10.plot(time,cy3,color='blue',linestyle='None',marker=',',label='Raw')
+            ax10.plot(time,cy3,color='blue',linewidth=0.02,label='Signal')
             ax10.axhline(cy3_bgrnd,color='red', label='Bkgnd',linewidth=2)
             ax10.axhline(cy3_bgrnd+cy3_thld,color='green', label='Thld',linewidth=2)
             ax10.axhline(settings['UTD']-cy3_bgrnd,color='black', label='Up Thld',linewidth=2)
             ax10.legend()   
-            ax10.set_title('Cy3 raw data')
+            ax10.set_title('Donor signal')
             ax10.set_ylabel('Count, kHz')
             ax10.set_xlabel('Time, S')
             
             ax11 = self.figure1.add_subplot(gs[1,1])
-            ax11.plot(time,cy5,color='blue',linestyle='None',marker=',',label='Raw')
+            ax11.plot(time,cy5,color='blue',linewidth=0.02,label='Signal')
             ax11.axhline(cy5_bgrnd,color='red', label='Bkgnd',linewidth=2)
             ax11.axhline(cy5_bgrnd+cy5_thld,color='green', label='Thld',linewidth=2)
             ax11.axhline(settings['UTA']-cy5_bgrnd,color='black', label='Up Thld',linewidth=2)
             ax11.legend()     
-            ax11.set_title('Cy5 raw data')
+            ax11.set_title('Acceptor signal')
             ax11.set_ylabel('Count, kHz')
             ax11.set_xlabel('Time, S')
             self.figure1.tight_layout()
@@ -349,9 +349,9 @@ class MainWindow(QtGui.QMainWindow):
                     table=np.vstack((table,np.round(result[0],4)))
 
 
-                ax.set_title('Superimposer plots')
+                ax.set_title('spFRET Efficiency Histogram')
                 ax.set_ylabel('Amount, %')
-                ax.set_xlabel('FRET Eff')
+                ax.set_xlabel('FRET Efficiency')
                 box = ax.get_position()
                 ax.set_position([box.x0, box.y0 + box.height * 0.1,
                          box.width, box.height * 0.9])

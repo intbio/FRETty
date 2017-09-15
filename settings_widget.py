@@ -303,8 +303,8 @@ class SettingsWidget(QtGui.QWidget):
         self.figure.suptitle(r"$E=\frac{F_a}{F_a+\gamma_d F_d}$" "\n"
                             r"$F_d=I_d - B_d -\alpha_{ad}(I_a-B_a)$" "\n"
                             r"$F_a=I_a - B_a -\alpha_{da}(I_d-B_d)-DE_a$" "\n" 
-                            r"$\gamma_d=\frac{\Phi_a k_d}{\Phi_d k_a}= " + 
-                            str(round((self.QA.value()*self.kD.value())/(self.QD.value()*self.kA.value()),4))+ "$\n"
+                            r"$\gamma_d=\frac{\Phi_a k_a}{\Phi_d k_d}= " + 
+                            str(round((self.QA.value()*self.kA.value())/(self.QD.value()*self.kD.value()),4))+ "$\n"
                             r"$I - intensity, B - background$" "\n"
                             r"$\alpha - crosstalk, \gamma - instr.coef.$" ,
                       x=0.0, y=0.5, 
@@ -412,6 +412,7 @@ class SettingsWidget(QtGui.QWidget):
         self.NAtext.hide()
         
     def collectSettings(self):
+        self.drawFormulas()
         self.changeHideStatus()
         #self.drawFormulas()
         settings={'QD':self.QD.value(),
