@@ -1,5 +1,5 @@
 # fretty
-This is a user friendly software for FRET calculation and comparing.
+This is a user friendly software for FRET calculation and comparison.
 ![Screenshot](Screenshot.png)
 Features:
 Works with time-binned data
